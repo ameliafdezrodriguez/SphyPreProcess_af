@@ -249,7 +249,7 @@ class SphyPreProcessDialog(QtWidgets.QDialog, Ui_SphyPreProcessDialog):
     #-Initialize the GUI
     def initGuiConfigMap(self):
         #####-Dictionary for General settings Tab and Basin delineation Tab
-        self.configDict = {'databaseLineEdit':('GENERAL', 'Database_dir'), 'resultsLineEdit':('GENERAL', 'Results_dir'), 'pcrasterBinFolderLineEdit': ('GENERAL', 'Pcraster_dir'),\
+        self.configDict = {'databaseLineEdit':('GENERAL', 'Database_dir'), 'resultsLineEdit':('GENERAL', 'Results_dir'),\
                            'utmSpinBox': ('GENERAL', 'utmZoneNr'),'startDateEdit': ('GENERAL', ('startyear', 'startmonth', 'startday')), 'endDateEdit': ('GENERAL', \
                            ('endyear', 'endmonth', 'endday')), 'outletsLineEdit' : ('DELINEATION', 'outlets_shp'), 'clipMaskCheckBox' : ('DELINEATION', 'clip'),\
                            'createSubBasinCheckBox' : ('DELINEATION', 'subbasins'), 'stationsLineEdit' : ('STATIONS', 'stations_shp')}
@@ -310,9 +310,7 @@ class SphyPreProcessDialog(QtWidgets.QDialog, Ui_SphyPreProcessDialog):
                         self.databaseConfig = False
                 elif widget == self.resultsLineEdit:
                     self.resultsPath = self.currentConfig.get(module, pars)
-                elif widget == self.pcrasterBinFolderLineEdit:
-                    self.pcrBinPath = self.currentConfig.get(module, pars)
-                #-Check if a outlet(s) file has been defined by the user
+                 #-Check if a outlet(s) file has been defined by the user
                 elif widget == self.outletsLineEdit:
                     if os.path.exists(self.currentConfig.get(module, pars)):
                         self.outletsShp = self.currentConfig.get(module, pars)
@@ -465,7 +463,6 @@ class SphyPreProcessDialog(QtWidgets.QDialog, Ui_SphyPreProcessDialog):
             if os.path.isfile(os.path.join(tempname, 'pcrcalc.exe')) == False:
                 QtWidgets.QMessageBox.warning(self, 'PCRaster bin path error', 'PCRaster is not found in the specified folder. \nSelect a different folder.')
             else:
-                self.pcrasterBinFolderLineEdit.setText(tempname.replace('\\', '/') + '/')
                 self.updateConfig('GENERAL', 'Pcraster_dir', tempname.replace('\\', '/') + '/')
         self.saveProject()
 
@@ -919,7 +916,7 @@ class SphyPreProcessDialog(QtWidgets.QDialog, Ui_SphyPreProcessDialog):
             outfile = os.path.join(self.resultsPath, 'temp.shp')
             s_srs = 'EPSG:' + self.databaseConfig.get('GLACIER', 'EPSG')
             #-Project the layer to the user CRS
-            processing.runalg("qgis:reprojectlayer", infile, t_srs, outfile)
+            processing.run("qgis:reprojectlayer", infile, t_srs, outfile)
             ########-Create gridded glacier outlines
             infile = outfile
             outfile = os.path.join(self.resultsPath, 'temp.tif')
@@ -932,7 +929,7 @@ class SphyPreProcessDialog(QtWidgets.QDialog, Ui_SphyPreProcessDialog):
 #             ########-Reclassify (NaN->0)  -> Uncertain why this is not working correctly. Therefore commented and part below is used.
 #             infile = outfile
 #             outfile = os.path.join(self.resultsPath, 'temp2.tif')
-#             processing.runalg("saga:reclassifygridvalues", infile, 0, 0, 0, 0, 0, 1, 2, 0, "0,0,0,0,0,0,0,0,0", 0, \
+#             processing.run("saga:reclassifygridvalues", infile, 0, 0, 0, 0, 0, 1, 2, 0, "0,0,0,0,0,0,0,0,0", 0, \
 #                 True, 0, False, 0, outfile)
 #             self.addCanvasLayer(outfile, 'temp2', 'raster')
 #             return
@@ -968,7 +965,7 @@ class SphyPreProcessDialog(QtWidgets.QDialog, Ui_SphyPreProcessDialog):
             infile = m.output
             outfile = os.path.join(self.resultsPath, 'temp3.tif')
             extent = str(self.xMin) + "," +  str(self.xMax) +"," + str(self.yMin) + "," + str(self.yMax)
-            processing.runalg("grass:r.resamp.stats", infile, 0, False, False, False, extent, res, outfile)
+            processing.run("grass:r.resamp.stats", {infile, 0, False, False, False, extent, res, outfile})
             self.addCanvasLayer(outfile, 'temp3', 'raster')
             mm+=1
             self.initialMapsProgressBar.setValue(mm/maps*100)
@@ -1024,12 +1021,12 @@ class SphyPreProcessDialog(QtWidgets.QDialog, Ui_SphyPreProcessDialog):
     def updateDelineation(self, state):
         sender = self.sender().objectName()
         if sender == 'selectOutletsButton':
-            outlets = QtWidgets.QFileDialog.getOpenFileName(self, "Select the Outlet(s) shapefile", self.resultsPath, "outlets.shp")
+            outlets = QtWidgets.QFileDialog.getOpenFileName(self, "Select the Outlet(s) shapefile", self.resultsPath, "outlets.shp")[0]
             if outlets:
-                self.deleteLayer(outlets[0], 'shape', remLayerDisk=False)
-                self.outletsShp = outlets[0]
+                self.deleteLayer(outlets, 'shape', remLayerDisk=False)
+                self.outletsShp = outlets
                 self.updateConfig('DELINEATION', 'outlets_shp', outlets)
-                self.addCanvasLayer(outlets[0], 'Outlet(s)', 'shape')
+                self.addCanvasLayer(outlets, 'Outlet(s)', 'shape')
         else:
             module = self.configDict[sender][0]
             par = self.configDict[sender][1]
@@ -1063,7 +1060,7 @@ class SphyPreProcessDialog(QtWidgets.QDialog, Ui_SphyPreProcessDialog):
             extent = str(self.xMin) + ',' + str(self.xMax) + ',' + str(self.yMin) + ',' + str(self.yMax)
             outfile = os.path.join(self.resultsPath, 'temp.tif')
             self.processLog2TextEdit.append('Converting Outlet(s) to raster...')
-            processing.runalg("grass:v.to.rast.attribute", self.outletsShp, 0, "id", extent, self.spatialRes, -1.0, 0.0001, outfile)
+            processing.run("grass:v.to.rast.attribute", {self.outletsShp, 0, "id", extent, self.spatialRes, -1.0, 0.0001, outfile})
             #####-Translate GeoTiff to PCRaster map
             infile = outfile
             outfile = os.path.join(self.resultsPath, 'temp.map')
@@ -1215,7 +1212,7 @@ class SphyPreProcessDialog(QtWidgets.QDialog, Ui_SphyPreProcessDialog):
     
     #-Function to update the station settings
     def updateStations(self):
-        stations = QtWidgets.QFileDialog.getOpenFileName(self, "Select the station(s) shapefile", self.resultsPath, "stations.shp")
+        stations = QtWidgets.QFileDialog.getOpenFileName(self, "Select the station(s) shapefile", self.resultsPath, "stations.shp")[0]
         if stations:
             self.deleteLayer(stations, 'shape', remLayerDisk=False)
             self.stationsShp = stations
@@ -1235,7 +1232,9 @@ class SphyPreProcessDialog(QtWidgets.QDialog, Ui_SphyPreProcessDialog):
             extent = str(self.xMin) + ',' + str(self.xMax) + ',' + str(self.yMin) + ',' + str(self.yMax)
             outfile = os.path.join(self.resultsPath, 'temp.tif')
             self.processLog3TextEdit.append('Converting Station(s) to raster...')
-            processing.runalg("grass:v.to.rast.attribute", self.stationsShp, 0, "id", extent, self.spatialRes, -1.0, 0.0001, outfile)
+            processing.run("grass7:v.to.rast", {'input':self.stationsShp,'type':0,'where':'','use':0,'attribute_column':'id','GRASS_REGION_PARAMETER':extent,
+                                                          'GRASS_REGION_CELLSIZE_PARAMETER': self.spatialRes, 'GRASS_SNAP_TOLERANCE_PARAMETER': -1.0,
+                                                          'GRASS_MIN_AREA_PARAMETER': 0.0001,'output':outfile})
             #####-Translate GeoTiff to PCRaster map
             infile = outfile
             outfile = os.path.join(self.resultsPath, 'temp.map')
@@ -1307,7 +1306,7 @@ class SphyPreProcessDialog(QtWidgets.QDialog, Ui_SphyPreProcessDialog):
             procSteps+=(timeSteps * 3)
         #-Create instance of processForcing
         f = processForcing(self.resultsPath, self.userCRS.authid(), self.spatialRes, [self.xMin, self.yMin, self.xMax, self.yMax],\
-            self.startdate, self.enddate, self.processLog4TextEdit, self.forcingProgressBar, procSteps, self.pcrBinPath)
+            self.startdate, self.enddate, self.processLog4TextEdit, self.forcingProgressBar, procSteps)
         if self.precDB or self.tempDB:
             #-Database properties
             f.dbSource = self.databaseConfig.get('METEO', 'source')

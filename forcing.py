@@ -39,7 +39,7 @@ from osgeo import osr
 #-Class that defines the processing of the meteorological forcings
 class processForcing(object):
     def __init__(self, resultsdir, t_srs, resolution, extent, startdate, enddate, \
-            textlog, progbar, procsteps, pcrbinpath):
+            textlog, progbar, procsteps):
         #-Create forcing directory in results directory if it does not exist
         self.outdir = os.path.join(resultsdir, 'forcing/')
         if not os.path.isdir(self.outdir):
@@ -84,8 +84,7 @@ class processForcing(object):
         self.progBar = progbar
         self.procSteps = procsteps
         self.counter = 0.
-        #-PCRaster bin directory
-        self.pcrBinPath = pcrbinpath
+
         
     #-Create precipitation forcing based on the database    
     def createPrecDB(self):
