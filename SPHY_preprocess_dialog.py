@@ -714,6 +714,7 @@ class SphyPreProcessDialog(QtWidgets.QDialog, Ui_SphyPreProcessDialog):
         
         ### First make the DEM ####################################
         #-create the commands to execute
+        print('1. CREATING DEM')
         commands = []
         infile = os.path.join(self.databasePath, self.databaseConfig.get('DEM', 'file'))
         outfile = os.path.join(self.resultsPath, 'temp.tif')
@@ -729,6 +730,7 @@ class SphyPreProcessDialog(QtWidgets.QDialog, Ui_SphyPreProcessDialog):
         commands.append(m.rasterTranslate())
         #-Execute the command(s) in a thread
         self.threadWorker(SubProcessWorker(commands, self.processLog1TextEdit, 'DEM', self.generalMaps['DEM'], True, 'raster', env =None))
+        self.thread.quit()
         # while self.thread.isRunning(): #-wait till the thread is finished before continue
         #     # fix_print_with_import
         #     print('running')
@@ -736,9 +738,11 @@ class SphyPreProcessDialog(QtWidgets.QDialog, Ui_SphyPreProcessDialog):
         mm+=1
         self.initialMapsProgressBar.setValue(int(mm/maps*100))
         ### make the Slope #######
+        print('2. CREATING SLOPE')
         command = self.pcrasterModelFile('"' + os.path.join(self.resultsPath, self.generalMaps['Slope']) + '"'\
                                         + ' = slope(' + '"' + os.path.join(self.resultsPath, self.generalMaps['DEM']) + '"' + ')')
         self.threadWorker(SubProcessWorker(['pcrcalc -f ' + command], self.processLog1TextEdit, 'Slope', self.generalMaps['Slope'], True, 'raster'))
+        self.thread.quit()
         # while self.thread.isRunning(): #-wait till the thread is finished before continue
         #     # fix_print_with_import
         #     print('')
@@ -751,6 +755,7 @@ class SphyPreProcessDialog(QtWidgets.QDialog, Ui_SphyPreProcessDialog):
         self.initialMapsProgressBar.setValue(int(mm/maps*100))
         ### Latitude map ##############################################
         #-create the commands to execute
+        print('3. CREATING LATITUDE')
         commands = []
         infile = os.path.join(self.databasePath, self.databaseConfig.get('LATITUDE', 'file'))
         outfile = os.path.join(self.resultsPath, 'temp.tif')
@@ -766,9 +771,10 @@ class SphyPreProcessDialog(QtWidgets.QDialog, Ui_SphyPreProcessDialog):
         commands.append(m.rasterTranslate())
         #-Execute the command(s) in a thread
         self.threadWorker(SubProcessWorker(commands, self.processLog1TextEdit, 'Latitudes', self.generalMaps['Latitudes'], True, 'raster'))
-        while self.thread.isRunning(): #-wait till the thread is finished before continue
-            # fix_print_with_import
-            print('')
+        self.thread.quit()
+        # while self.thread.isRunning(): #-wait till the thread is finished before continue
+        #     # fix_print_with_import
+        #     print('')
         #-remove temporary tiffs from results dir
         fi = glob.glob(os.path.join(self.resultsPath, 'temp.*'))
         for f in fi:
@@ -777,6 +783,7 @@ class SphyPreProcessDialog(QtWidgets.QDialog, Ui_SphyPreProcessDialog):
         mm+=1
         self.initialMapsProgressBar.setValue(int(mm/maps*100))
         ### Landuse map ##############################################
+        print('4. CREATING LANDUSE')
         #-create the commands to execute
         commands = []
         infile = os.path.join(self.databasePath, self.databaseConfig.get('LANDUSE', 'file'))
@@ -793,6 +800,7 @@ class SphyPreProcessDialog(QtWidgets.QDialog, Ui_SphyPreProcessDialog):
         commands.append(m.rasterTranslate())
         #-Execute the command(s) in a thread
         self.threadWorker(SubProcessWorker(commands, self.processLog1TextEdit, 'LandUse', self.generalMaps['LandUse'], True, 'raster'))
+        self.thread.quit()
         # while self.thread.isRunning(): #-wait till the thread is finished before continue
         #     # fix_print_with_import
         #     print('')
@@ -804,6 +812,7 @@ class SphyPreProcessDialog(QtWidgets.QDialog, Ui_SphyPreProcessDialog):
         mm+=1
         self.initialMapsProgressBar.setValue(int(mm/maps*100))
         #### Soil maps ###################################################
+        print('5. CREATING SOIL MAPS')
         soilMapTiffs = {'Root_field': 'root_field_file', 'Root_sat': 'root_sat_file', 'Root_dry': 'root_dry_file'\
                         ,'Root_wilt': 'root_wilt_file', 'Root_Ksat': 'root_ksat_file', 'Sub_field': 'sub_field_file'\
                         ,'Sub_sat': 'sub_sat_file', 'Sub_Ksat': 'sub_ksat_file'}
@@ -824,6 +833,7 @@ class SphyPreProcessDialog(QtWidgets.QDialog, Ui_SphyPreProcessDialog):
             commands.append(m.rasterTranslate())
             #-Execute the command(s) in a thread
             self.threadWorker(SubProcessWorker(commands, self.processLog1TextEdit, smap, self.generalMaps[smap], True, 'raster'))
+            self.thread.quit()
             # while self.thread.isRunning(): #-wait till the thread is finished before continue
             #     # fix_print_with_import
             #     print('')
@@ -835,12 +845,9 @@ class SphyPreProcessDialog(QtWidgets.QDialog, Ui_SphyPreProcessDialog):
             mm+=1
             self.initialMapsProgressBar.setValue(int(mm/maps*100))
             
-            #-remove .AUX FILES
-            fi = glob.glob(os.path.join(self.resultsPath, '*.aux'))
-            for f in fi:
-                os.remove(f)
 
         ############### ROUTING MAPS, IF MODULE IS ON ##########################
+        print('6. CREATING ROUTING MAPS')
         if self.currentConfig.getint('MODULES', 'routing') == 1:
             #-delete old raster layers from canvas and disk if exists
 #             for k in self.routingMaps:
@@ -911,6 +918,8 @@ class SphyPreProcessDialog(QtWidgets.QDialog, Ui_SphyPreProcessDialog):
             self.initialMapsProgressBar.setValue(int(mm/maps*100))
                 
         ################### GLACIER MAPS, IF MODULE IS ON ########################
+        print('CREATING GLACIER MAPS')
+
         if self.currentConfig.getint('MODULES', 'glacier') == 1:
             #-delete old raster layers from canvas and disk if exists
 #             for k in self.glacierMaps:
@@ -1021,6 +1030,11 @@ class SphyPreProcessDialog(QtWidgets.QDialog, Ui_SphyPreProcessDialog):
         self.deleteLayer(os.path.join(self.resultsPath, 'temp3.tif'), 'raster')
         #-Activate the delineation button in the "Basin delineation" Tab
         self.delineateButton.setEnabled(1)
+
+        #-remove AUX FILES
+        fi = glob.glob(os.path.join(self.resultsPath, '*.aux.xml'))
+        for f in fi:
+            os.remove(f)
         
         
     #-Function to update the basin delineation settings        

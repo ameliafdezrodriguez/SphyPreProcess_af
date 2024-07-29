@@ -58,35 +58,39 @@ class SubProcessWorker(QtCore.QObject):
                     stdout=subprocess.PIPE,
                     stdin=subprocess.PIPE,
                     stderr=subprocess.STDOUT,
-                    universal_newlines=True,
+                    universal_newlines=False,
                     env=self.env
                     )
                   
                 proc = self.process.stdout
 
-                while True:
-                    line = proc.readline()
-                    if not line:
-                        print("No more lines to read.")
-                        break
-                    print(f"Read line: {line}")
-                    if "Traceback" in line:
-                        self.process = None
-                        break
-                    elif "WARNING" in line or "temp" in line or "ERROR" in line or "Permission" in line:
-                        self.cmdProgress.emit(['...', self.textLog])
-                    else:
-                        self.cmdProgress.emit([line, self.textLog])
+                # while True:
+                #     line = proc.readline()
+                #     if not line:
+                #         print("No more lines to read.")
+                #         break
+                #     print(f"Read line: {line}")
+                #     if "Traceback" in line:
+                #         self.process = None
+                #         break
+                #     elif "WARNING" in line or "temp" in line or "ERROR" in line or "Permission" in line:
+                #         self.cmdProgress.emit(['...', self.textLog])
+                #     else:
+                #         self.cmdProgress.emit([line, self.textLog])
+                #self.cmdProgress.emit([command, self.textLog])
+                self.cmdProgress.emit(["Waiting for process to complete.", self.textLog])
+                self.process.wait()  # Wait for the process to complete
+                self.cmdProgress.emit(["Process completed", self.textLog])
 
-                self.process.wait()
-
-                print('Command ' + command)
-
+            # Send signal
+            print('Sent signal')
+            self.cmdProgress.emit(["Sent signal", self.textLog])
+            self.finished.emit([self.process, self.mapName, self.fileName, self.addMap, self.fType, self.textLog])
+            
+                
         except Exception as e:
             # forward the exception upstream
             self.error.emit(e, traceback.format_exc())
         
-        # Send signal
-        self.finished.emit([self.process, self.mapName, self.fileName, self.addMap, self.fType, self.textLog])
-        print('Sent signal')
+
          

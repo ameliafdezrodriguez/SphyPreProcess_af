@@ -1,1 +1,1 @@
-"E:/amelia/SPHY_demo/SPHY-3.0-test/input/slope.map" = slope("E:/amelia/SPHY_demo/SPHY-3.0-test/input/dem.map")
+"E:/amelia/SPHY_demo/SPHY-3.0-test/input/stations.map" = nominal("E:/amelia/SPHY_demo/SPHY-3.0-test/input/temp.map")
