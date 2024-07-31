@@ -53,7 +53,7 @@ import os, subprocess, configparser, sqlite3, datetime, math, glob, time, proces
 from qgis.PyQt import QtGui, QtCore, QtWidgets #uic
 from qgis.core import *
 from qgis.utils import iface, plugins
-from qgis.gui import QgsMessageBar, QgsMapToolEmitPoint, QgsRubberBand
+from qgis.gui import QgsMessageBar, QgsMapToolEmitPoint, QgsRubberBand 
 
 from SphyPreProcess_af.gui.generated.SPHY_preprocess_dialog_base import Ui_SphyPreProcessDialog
 
@@ -919,105 +919,120 @@ class SphyPreProcessDialog(QtWidgets.QDialog, Ui_SphyPreProcessDialog):
                 
         ################### GLACIER MAPS, IF MODULE IS ON ########################
         print('CREATING GLACIER MAPS')
-
         if self.currentConfig.getint('MODULES', 'glacier') == 1:
-            #-delete old raster layers from canvas and disk if exists
-#             for k in self.glacierMaps:
-#                 try:
-#                     self.deleteLayer(os.path.join(self.resultsPath, self.glacierMaps[k]), 'raster')
-#                 except:
-#                     pass
-            infile = os.path.join(self.databasePath, self.databaseConfig.get('GLACIER', 'file'))
-            outfile = os.path.join(self.resultsPath, 'temp.shp')
-            s_srs = 'EPSG:' + self.databaseConfig.get('GLACIER', 'EPSG')
-            #-Project the layer to the user CRS
-            processing.run("qgis:reprojectlayer", infile, t_srs, outfile)
-            ########-Create gridded glacier outlines
-            infile = outfile
-            outfile = os.path.join(self.resultsPath, 'temp.tif')
-            #-Create a class with the gdal methods
-            m = SpatialProcessing(infile, outfile, s_srs, t_srs, res/10, extra='-a_nodata -3.40282e+38 -burn 1.0 ' + extent)
-            self.threadWorker(SubProcessWorker([m.rasterize()], self.processLog1TextEdit, 'Gridded Randolph', outfile, True, 'raster'))
-            # while self.thread.isRunning(): #-wait till the thread is finished before continue
-            #     # fix_print_with_import
-            #     print('')
-#             ########-Reclassify (NaN->0)  -> Uncertain why this is not working correctly. Therefore commented and part below is used.
+            print('Running glaciers model')
+            processing.run("model:glaciers_model", 
+                           {'clone_map': os.path.join(self.resultsPath, 'clone.map'),
+                            'rgi_shapefile':os.path.join(self.databasePath, 'Glaciers_files/13_rgi60_CentralAsia.shp'),
+                            'debris_tiff': os.path.join(self.databasePath, 'Glaciers_files/debris_reprojected_30m.tif'),
+                            'dem':os.path.join(self.databasePath, self.databaseConfig.get('DEM', 'file')),
+                            'ferrinoti_tiff':os.path.join(self.databasePath, 'Glaciers_files/Ferrinoti_complete_icethickness_finalmerged.tif'),
+                            'model_resolution':self.spatialRes,'model_crs':t_srs,
+                            'finer_resolution':self.spatialRes/10,'output_folder':self.resultsPath,
+                            'glaciers':'TEMPORARY_OUTPUT','rgi_clipped_reproject_glac_id':'TEMPORARY_OUTPUT',
+                            'intersection_glaciers_uid':'TEMPORARY_OUTPUT','ice_depth':'TEMPORARY_OUTPUT',
+                            'debris':'TEMPORARY_OUTPUT','frac_glac':'TEMPORARY_OUTPUT','mod_id':'TEMPORARY_OUTPUT',
+                            'modid_int_glacid':'TEMPORARY_OUTPUT','u_id':'TEMPORARY_OUTPUT','modid_int_glacid_inclmodh':'TEMPORARY_OUTPUT',
+                            'intersection_glaciers_uid_hglac':'TEMPORARY_OUTPUT','debris_geom':'TEMPORARY_OUTPUT'})
+            print('Glaciers Module done')
+
+#             #-delete old raster layers from canvas and disk if exists
+# #             for k in self.glacierMaps:
+# #                 try:
+# #                     self.deleteLayer(os.path.join(self.resultsPath, self.glacierMaps[k]), 'raster')
+# #                 except:
+# #                     pass
+#             infile = os.path.join(self.databasePath, self.databaseConfig.get('GLACIER', 'file'))
+#             outfile = os.path.join(self.resultsPath, 'temp.shp')
+#             s_srs = 'EPSG:' + self.databaseConfig.get('GLACIER', 'EPSG')
+#             #-Project the layer to the user CRS
+#             processing.run("qgis:reprojectlayer", infile, t_srs, outfile)
+#             ########-Create gridded glacier outlines
 #             infile = outfile
-#             outfile = os.path.join(self.resultsPath, 'temp2.tif')
-#             processing.run("saga:reclassifygridvalues", infile, 0, 0, 0, 0, 0, 1, 2, 0, "0,0,0,0,0,0,0,0,0", 0, \
-#                 True, 0, False, 0, outfile)
-#             self.addCanvasLayer(outfile, 'temp2', 'raster')
-#             return
-            ########-Reclassify (NaN->0)
-            #-First convert to pcraster map
-            m.input = outfile
-            m.output = os.path.join(self.resultsPath, 'temp.map')
-            m.extra = '-of PCRaster'
-            #-Execute the command(s) in a thread
-            self.threadWorker(SubProcessWorker([m.rasterTranslate()], self.processLog1TextEdit, 'temp', m.output, False, 'raster'))
-            # while self.thread.isRunning(): #-wait till the thread is finished before continue
-            #     # fix_print_with_import
-            #     print('')
-            #-Replace NaN with zero
-            infile = m.output
-            outfile = os.path.join(self.resultsPath, 'temp2.map')
-            command = self.pcrasterModelFile('"' + outfile + '" = cover("' + infile + '", 0)')
-            #-Execute the command(s) in a thread
-            self.threadWorker(SubProcessWorker(['pcrcalc -f ' + command], self.processLog1TextEdit, 'temp2', outfile, False, 'raster'))
-            # while self.thread.isRunning(): #-wait till the thread is finished before continue
-            #     # fix_print_with_import
-            #     print('')
-            #-Convert to Geotiff
-            m.input = outfile
-            m.output = os.path.join(self.resultsPath, 'temp2.tif')
-            m.extra = ''
-            #-Execute the command(s) in a thread
-            self.threadWorker(SubProcessWorker([m.rasterTranslate()], self.processLog1TextEdit, 'temp2', m.output, True, 'raster'))
-            # while self.thread.isRunning(): #-wait till the thread is finished before continue
-            #     # fix_print_with_import
-            #     print('')
-            #######-Aggregate the results to the glacier fraction map
-            infile = m.output
-            outfile = os.path.join(self.resultsPath, 'temp3.tif')
-            extent = str(self.xMin) + "," +  str(self.xMax) +"," + str(self.yMin) + "," + str(self.yMax)
-            processing.run("grass:r.resamp.stats", {infile, 0, False, False, False, extent, res, outfile})
-            self.addCanvasLayer(outfile, 'temp3', 'raster')
-            mm+=1
-            self.initialMapsProgressBar.setValue(int(mm/maps*100))
-            ######-Convert to PCRaster map
-            m.input = outfile
-            m.output = os.path.join(self.resultsPath, self.glacierMaps['GlacFrac'])
-            m.extra = '-of PCRaster'
-            #-Execute the command(s) in a thread
-            self.threadWorker(SubProcessWorker([m.rasterTranslate()], self.processLog1TextEdit, 'GlacFrac', m.output, True, 'raster'))
-            # while self.thread.isRunning(): #-wait till the thread is finished before continue
-            #     # fix_print_with_import
-            #     print('')
-            ########-Debris fraction map
-            demfile = os.path.join(self.resultsPath, self.generalMaps['DEM'])
-            slopefile = os.path.join(self.resultsPath, self.generalMaps['Slope'])
-            glacfracfile = os.path.join(self.resultsPath, self.glacierMaps['GlacFrac'])
-            outfile = os.path.join(self.resultsPath, self.glacierMaps['GlacFracDB'])
-            command = self.pcrasterModelFile('"' + outfile + '"' + ' = scalar(if("' + demfile + '" lt 4100 and scalar(atan("' + slopefile + '")) lt 24 and "' + glacfracfile + '" gt 0, 1, 0))')
-            #command = self.pcrasterModelFile('"' + outfile + '"' + ' = scalar(if("' + demfile + '" lt 4100 and scalar(atan("' + slopefile + '")) lt 24, 1, 0))')
-            #-Execute the command(s) in a thread            
-            self.threadWorker(SubProcessWorker(['pcrcalc -f ' + command], self.processLog1TextEdit, 'GlacFracDB', self.glacierMaps['GlacFracDB'], True, 'raster'))
-            # while self.thread.isRunning(): #-wait till the thread is finished before continue
-            #     # fix_print_with_import
-            #     print('')
-            mm+=1
-            self.initialMapsProgressBar.setValue(int(mm/maps*100))
-            ########-Clean ice fraction map
-            infile = outfile
-            outfile = os.path.join(self.resultsPath, self.glacierMaps['GlacFracCI'])
-            command = self.pcrasterModelFile('"' + outfile + '"' + ' = scalar(if("' + infile + '" eq 0 and "' + glacfracfile + '" gt 0, 1, 0))')
-            #-Execute the command(s) in a thread            
-            self.threadWorker(SubProcessWorker(['pcrcalc -f ' + command], self.processLog1TextEdit, 'GlacFracCI', self.glacierMaps['GlacFracCI'], True, 'raster'))
-            # while self.thread.isRunning(): #-wait till the thread is finished before continue
-            #     # fix_print_with_import
-            #     print('')
-            mm+=1
-            self.initialMapsProgressBar.setValue(int(mm/maps*100))
+#             outfile = os.path.join(self.resultsPath, 'temp.tif')
+#             #-Create a class with the gdal methods
+#             m = SpatialProcessing(infile, outfile, s_srs, t_srs, res/10, extra='-a_nodata -3.40282e+38 -burn 1.0 ' + extent)
+#             self.threadWorker(SubProcessWorker([m.rasterize()], self.processLog1TextEdit, 'Gridded Randolph', outfile, True, 'raster'))
+#             # while self.thread.isRunning(): #-wait till the thread is finished before continue
+#             #     # fix_print_with_import
+#             #     print('')
+# #             ########-Reclassify (NaN->0)  -> Uncertain why this is not working correctly. Therefore commented and part below is used.
+# #             infile = outfile
+# #             outfile = os.path.join(self.resultsPath, 'temp2.tif')
+# #             processing.run("saga:reclassifygridvalues", infile, 0, 0, 0, 0, 0, 1, 2, 0, "0,0,0,0,0,0,0,0,0", 0, \
+# #                 True, 0, False, 0, outfile)
+# #             self.addCanvasLayer(outfile, 'temp2', 'raster')
+# #             return
+#             ########-Reclassify (NaN->0)
+#             #-First convert to pcraster map
+#             m.input = outfile
+#             m.output = os.path.join(self.resultsPath, 'temp.map')
+#             m.extra = '-of PCRaster'
+#             #-Execute the command(s) in a thread
+#             self.threadWorker(SubProcessWorker([m.rasterTranslate()], self.processLog1TextEdit, 'temp', m.output, False, 'raster'))
+#             # while self.thread.isRunning(): #-wait till the thread is finished before continue
+#             #     # fix_print_with_import
+#             #     print('')
+#             #-Replace NaN with zero
+#             infile = m.output
+#             outfile = os.path.join(self.resultsPath, 'temp2.map')
+#             command = self.pcrasterModelFile('"' + outfile + '" = cover("' + infile + '", 0)')
+#             #-Execute the command(s) in a thread
+#             self.threadWorker(SubProcessWorker(['pcrcalc -f ' + command], self.processLog1TextEdit, 'temp2', outfile, False, 'raster'))
+#             # while self.thread.isRunning(): #-wait till the thread is finished before continue
+#             #     # fix_print_with_import
+#             #     print('')
+#             #-Convert to Geotiff
+#             m.input = outfile
+#             m.output = os.path.join(self.resultsPath, 'temp2.tif')
+#             m.extra = ''
+#             #-Execute the command(s) in a thread
+#             self.threadWorker(SubProcessWorker([m.rasterTranslate()], self.processLog1TextEdit, 'temp2', m.output, True, 'raster'))
+#             # while self.thread.isRunning(): #-wait till the thread is finished before continue
+#             #     # fix_print_with_import
+#             #     print('')
+#             #######-Aggregate the results to the glacier fraction map
+#             infile = m.output
+#             outfile = os.path.join(self.resultsPath, 'temp3.tif')
+#             extent = str(self.xMin) + "," +  str(self.xMax) +"," + str(self.yMin) + "," + str(self.yMax)
+#             processing.run("grass:r.resamp.stats", {infile, 0, False, False, False, extent, res, outfile})
+#             self.addCanvasLayer(outfile, 'temp3', 'raster')
+#             mm+=1
+#             self.initialMapsProgressBar.setValue(int(mm/maps*100))
+#             ######-Convert to PCRaster map
+#             m.input = outfile
+#             m.output = os.path.join(self.resultsPath, self.glacierMaps['GlacFrac'])
+#             m.extra = '-of PCRaster'
+#             #-Execute the command(s) in a thread
+#             self.threadWorker(SubProcessWorker([m.rasterTranslate()], self.processLog1TextEdit, 'GlacFrac', m.output, True, 'raster'))
+#             # while self.thread.isRunning(): #-wait till the thread is finished before continue
+#             #     # fix_print_with_import
+#             #     print('')
+#             ########-Debris fraction map
+#             demfile = os.path.join(self.resultsPath, self.generalMaps['DEM'])
+#             slopefile = os.path.join(self.resultsPath, self.generalMaps['Slope'])
+#             glacfracfile = os.path.join(self.resultsPath, self.glacierMaps['GlacFrac'])
+#             outfile = os.path.join(self.resultsPath, self.glacierMaps['GlacFracDB'])
+#             command = self.pcrasterModelFile('"' + outfile + '"' + ' = scalar(if("' + demfile + '" lt 4100 and scalar(atan("' + slopefile + '")) lt 24 and "' + glacfracfile + '" gt 0, 1, 0))')
+#             #command = self.pcrasterModelFile('"' + outfile + '"' + ' = scalar(if("' + demfile + '" lt 4100 and scalar(atan("' + slopefile + '")) lt 24, 1, 0))')
+#             #-Execute the command(s) in a thread            
+#             self.threadWorker(SubProcessWorker(['pcrcalc -f ' + command], self.processLog1TextEdit, 'GlacFracDB', self.glacierMaps['GlacFracDB'], True, 'raster'))
+#             # while self.thread.isRunning(): #-wait till the thread is finished before continue
+#             #     # fix_print_with_import
+#             #     print('')
+#             mm+=1
+#             self.initialMapsProgressBar.setValue(int(mm/maps*100))
+#             ########-Clean ice fraction map
+#             infile = outfile
+#             outfile = os.path.join(self.resultsPath, self.glacierMaps['GlacFracCI'])
+#             command = self.pcrasterModelFile('"' + outfile + '"' + ' = scalar(if("' + infile + '" eq 0 and "' + glacfracfile + '" gt 0, 1, 0))')
+#             #-Execute the command(s) in a thread            
+#             self.threadWorker(SubProcessWorker(['pcrcalc -f ' + command], self.processLog1TextEdit, 'GlacFracCI', self.glacierMaps['GlacFracCI'], True, 'raster'))
+#             # while self.thread.isRunning(): #-wait till the thread is finished before continue
+#             #     # fix_print_with_import
+#             #     print('')
+#             mm+=1
+#             self.initialMapsProgressBar.setValue(int(mm/maps*100))
        
         self.initialMapsProgressBar.setValue(100)
         time.sleep(1)

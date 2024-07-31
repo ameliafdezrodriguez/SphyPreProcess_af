@@ -60,9 +60,9 @@ class SubProcessWorker(QtCore.QObject):
                     stderr=subprocess.STDOUT,
                     universal_newlines=False,
                     env=self.env
-                    )
+                    ).wait()
                   
-                proc = self.process.stdout
+                #proc = self.process.stdout
 
                 # while True:
                 #     line = proc.readline()
@@ -77,9 +77,9 @@ class SubProcessWorker(QtCore.QObject):
                 #         self.cmdProgress.emit(['...', self.textLog])
                 #     else:
                 #         self.cmdProgress.emit([line, self.textLog])
-                #self.cmdProgress.emit([command, self.textLog])
+                self.cmdProgress.emit([command, self.textLog])
                 self.cmdProgress.emit(["Waiting for process to complete.", self.textLog])
-                self.process.wait()  # Wait for the process to complete
+                #self.process.wait()  # Wait for the process to complete
                 self.cmdProgress.emit(["Process completed", self.textLog])
 
             # Send signal
