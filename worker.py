@@ -85,8 +85,11 @@ class SubProcessWorker(QtCore.QObject):
             # Send signal
             print('Sent signal')
             self.cmdProgress.emit(["Sent signal", self.textLog])
-            self.finished.emit([self.process, self.mapName, self.fileName, self.addMap, self.fType, self.textLog])
             
+            print('Emitting....')
+            self.finished.emit([self.process, self.mapName, self.fileName, self.addMap, self.fType, self.textLog])
+            print('Emitted....')
+
                 
         except Exception as e:
             # forward the exception upstream

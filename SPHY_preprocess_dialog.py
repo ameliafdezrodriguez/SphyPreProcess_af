@@ -57,18 +57,13 @@ from qgis.gui import QgsMessageBar, QgsMapToolEmitPoint, QgsRubberBand
 
 from SphyPreProcess_af.gui.generated.SPHY_preprocess_dialog_base import Ui_SphyPreProcessDialog
 
-#from PyQt4.Qt import QMessageBox
-#from Canvas import Rectangle
-#from PyQt4.Qt import QFileInfo
-#from PyQt4.Qt import QFileInfo, QMessageBox
-
 #-Import spatial processing class with gdal commands
 from .spatial_processing import SpatialProcessing
 #-Import worker class for running subprocesses in a thread
 from .worker import SubProcessWorker
 #-Import forcing processing 
 from .forcing import processForcing
-#from win32con import WAIT_IO_COMPLETION
+from win32con import WAIT_IO_COMPLETION
 #import shutil
 
 #-Class that allows to drag a rectangle on the map canvas
@@ -188,29 +183,6 @@ class SphyPreProcessDialog(QtWidgets.QDialog, Ui_SphyPreProcessDialog):
         except:
             self.userCRS = self.mapCrs
         
-        """ Menu buttons (New Project, Open Project, Save, Save As) """    
-        #self.newButton.clicked.connect(self.createNewProject)
-        #self.openButton.clicked.connect(self.openProject)
-        #self.saveAsButton.clicked.connect(self.saveAsProject)
-        
-        """ General settings Tab """
-        #-Set the folders
-        #self.databaseFolderButton.clicked.connect(self.updatePath)
-        #self.resultsFolderButton.clicked.connect(self.updatePath)
-        #-User specified coordinate system
-        #self.utmSpinBox.valueChanged.connect(self.changeCRS)
-        #self.utmNRadioButton.toggled.connect(self.changeCRS)
-        #self.showUTMMapButton.clicked.connect(self.showUTM)
-        #-Date settings
-        #self.startDateEdit.dateChanged.connect(self.updateDate)
-        #self.endDateEdit.dateChanged.connect(self.updateDate)
-        
-        """ Area selection Tab """
-        #self.showBackgroundMapcheckBox.stateChanged.connect(self.showBackground)
-        #self.selectAreaButton.clicked.connect(self.selectArea)
-        #self.calculateAreaPropsButton.clicked.connect(self.recreateArea)
-        #self.createModelCloneButton.clicked.connect(self.createClone)
-        
         """ Modules Tab """
         self.glacierModCheckBox.stateChanged.connect(self.updateModules)
         self.routingModCheckBox.stateChanged.connect(self.updateModules)
@@ -223,11 +195,11 @@ class SphyPreProcessDialog(QtWidgets.QDialog, Ui_SphyPreProcessDialog):
         self.clipMaskCheckBox.stateChanged.connect(self.updateDelineation)
         self.createSubBasinCheckBox.stateChanged.connect(self.updateDelineation)
         self.delineateButton.clicked.connect(self.delineate)
+        self.delineateButton.setEnabled(1)
         
         """ Stations Tab """
         self.selectStationsButton.clicked.connect(self.updateStations)
         self.stationsButton.clicked.connect(self.createStations)
-        
         
         """ Meteorological forcing Tab """
         self.precFlagCheckBox.stateChanged.connect(self.updateForcing)
@@ -271,7 +243,7 @@ class SphyPreProcessDialog(QtWidgets.QDialog, Ui_SphyPreProcessDialog):
                             'Sub_Ksat': 'sub_ksat.map', 'LandUse': 'landuse.map', 'Latitudes': 'latitude.map'}
         #-glacier and routing maps are only created if these modules are turned on. Snow and groundwater modules don't require the creation of maps, but are implemented for possible
         # future developments. The Gui doesn't do anything with these two modules yet.
-        self.glacierMaps = {'GlacFrac': 'glacfrac.map', 'GlacFracCI': 'glac_cleanice.map', 'GlacFracDB': 'glac_debris.map'}
+        self.glacierMaps = {'Glaciers Table': 'glaciers.csv'} #╔{'GlacFrac': 'glacfrac.map', 'GlacFracCI': 'glac_cleanice.map', 'GlacFracDB': 'glac_debris.map'}
         #self.routingMaps = {'LDD': 'ldd.map', 'Outlets': 'outlet.map', 'Rivers': 'river.map', 'AccuFlux': 'accuflux.map', 'Sub-basins': 'subbasins.map'}
         self.routingMaps = {'LDD': 'ldd.map', 'Outlets': 'outlets.map', 'Rivers': 'river.map', 'AccuFlux': 'accuflux.map', 'Sub-basins': 'subbasins.map'}
         self.setModulesDict()
@@ -694,7 +666,7 @@ class SphyPreProcessDialog(QtWidgets.QDialog, Ui_SphyPreProcessDialog):
         if self.routing:
             maps += 5
         if self.glacier:
-            maps += 3
+            maps += 1 #3
         #-set the map properties of resulting maps
         t_srs =  self.userCRS.authid()
         res = self.spatialRes
@@ -711,8 +683,8 @@ class SphyPreProcessDialog(QtWidgets.QDialog, Ui_SphyPreProcessDialog):
         fi = glob.glob(os.path.join(self.resultsPath, 'temp*'))
         for f in fi:
             os.remove(f)
-        
-        ### First make the DEM ####################################
+
+        # %% 1. CREATING DEM ------------------------------------------------------------
         #-create the commands to execute
         print('1. CREATING DEM')
         commands = []
@@ -730,14 +702,14 @@ class SphyPreProcessDialog(QtWidgets.QDialog, Ui_SphyPreProcessDialog):
         commands.append(m.rasterTranslate())
         #-Execute the command(s) in a thread
         self.threadWorker(SubProcessWorker(commands, self.processLog1TextEdit, 'DEM', self.generalMaps['DEM'], True, 'raster', env =None))
-        self.thread.quit()
-        # while self.thread.isRunning(): #-wait till the thread is finished before continue
-        #     # fix_print_with_import
-        #     print('running')
+        #self.thread.quit()
+        while self.thread.isRunning(): #-wait till the thread is finished before continue
+            # fix_print_with_import
+            print('running')
         #-set progress bar value
         mm+=1
         self.initialMapsProgressBar.setValue(int(mm/maps*100))
-        ### make the Slope #######
+        # %% 2. CREATING SLOPE ------------------------------------------------------------
         print('2. CREATING SLOPE')
         command = self.pcrasterModelFile('"' + os.path.join(self.resultsPath, self.generalMaps['Slope']) + '"'\
                                         + ' = slope(' + '"' + os.path.join(self.resultsPath, self.generalMaps['DEM']) + '"' + ')')
@@ -753,7 +725,7 @@ class SphyPreProcessDialog(QtWidgets.QDialog, Ui_SphyPreProcessDialog):
         #-set progress bar value
         mm+=1
         self.initialMapsProgressBar.setValue(int(mm/maps*100))
-        ### Latitude map ##############################################
+        # %% 3. CREATING LATITUDE ------------------------------------------------------------
         #-create the commands to execute
         print('3. CREATING LATITUDE')
         commands = []
@@ -782,7 +754,7 @@ class SphyPreProcessDialog(QtWidgets.QDialog, Ui_SphyPreProcessDialog):
         #-set progress bar value
         mm+=1
         self.initialMapsProgressBar.setValue(int(mm/maps*100))
-        ### Landuse map ##############################################
+        # %% 4. CREATING LANDUSE ------------------------------------------------------------
         print('4. CREATING LANDUSE')
         #-create the commands to execute
         commands = []
@@ -811,7 +783,7 @@ class SphyPreProcessDialog(QtWidgets.QDialog, Ui_SphyPreProcessDialog):
         #-set progress bar value
         mm+=1
         self.initialMapsProgressBar.setValue(int(mm/maps*100))
-        #### Soil maps ###################################################
+        # %% 5. CREATING SOIL MAPS ------------------------------------------------------------
         print('5. CREATING SOIL MAPS')
         soilMapTiffs = {'Root_field': 'root_field_file', 'Root_sat': 'root_sat_file', 'Root_dry': 'root_dry_file'\
                         ,'Root_wilt': 'root_wilt_file', 'Root_Ksat': 'root_ksat_file', 'Sub_field': 'sub_field_file'\
@@ -846,7 +818,7 @@ class SphyPreProcessDialog(QtWidgets.QDialog, Ui_SphyPreProcessDialog):
             self.initialMapsProgressBar.setValue(int(mm/maps*100))
             
 
-        ############### ROUTING MAPS, IF MODULE IS ON ##########################
+        # %% 6. CREATING ROUTING MAPS ------------------------------------------------------------
         print('6. CREATING ROUTING MAPS')
         if self.currentConfig.getint('MODULES', 'routing') == 1:
             #-delete old raster layers from canvas and disk if exists
@@ -917,16 +889,16 @@ class SphyPreProcessDialog(QtWidgets.QDialog, Ui_SphyPreProcessDialog):
             mm+=1
             self.initialMapsProgressBar.setValue(int(mm/maps*100))
                 
-        ################### GLACIER MAPS, IF MODULE IS ON ########################
+        # %% 7. CREATING GLACIER MAPS ------------------------------------------------------------
         print('CREATING GLACIER MAPS')
         if self.currentConfig.getint('MODULES', 'glacier') == 1:
             print('Running glaciers model')
             processing.run("model:glaciers_model", 
                            {'clone_map': os.path.join(self.resultsPath, 'clone.map'),
-                            'rgi_shapefile':os.path.join(self.databasePath, 'Glaciers_files/13_rgi60_CentralAsia.shp'),
-                            'debris_tiff': os.path.join(self.databasePath, 'Glaciers_files/debris_reprojected_30m.tif'),
+                            'rgi_shapefile':os.path.join(self.databasePath, self.databaseConfig.get('GLACIER', 'rgi_file')),
+                            'debris_tiff': os.path.join(self.databasePath, self.databaseConfig.get('GLACIER', 'debris_file')),
                             'dem':os.path.join(self.databasePath, self.databaseConfig.get('DEM', 'file')),
-                            'ferrinoti_tiff':os.path.join(self.databasePath, 'Glaciers_files/Ferrinoti_complete_icethickness_finalmerged.tif'),
+                            'ferrinoti_tiff':os.path.join(self.databasePath, self.databaseConfig.get('GLACIER', 'ferrinoti_file')),
                             'model_resolution':self.spatialRes,'model_crs':t_srs,
                             'finer_resolution':self.spatialRes/10,'output_folder':self.resultsPath,
                             'glaciers':'TEMPORARY_OUTPUT','rgi_clipped_reproject_glac_id':'TEMPORARY_OUTPUT',
@@ -936,103 +908,6 @@ class SphyPreProcessDialog(QtWidgets.QDialog, Ui_SphyPreProcessDialog):
                             'intersection_glaciers_uid_hglac':'TEMPORARY_OUTPUT','debris_geom':'TEMPORARY_OUTPUT'})
             print('Glaciers Module done')
 
-#             #-delete old raster layers from canvas and disk if exists
-# #             for k in self.glacierMaps:
-# #                 try:
-# #                     self.deleteLayer(os.path.join(self.resultsPath, self.glacierMaps[k]), 'raster')
-# #                 except:
-# #                     pass
-#             infile = os.path.join(self.databasePath, self.databaseConfig.get('GLACIER', 'file'))
-#             outfile = os.path.join(self.resultsPath, 'temp.shp')
-#             s_srs = 'EPSG:' + self.databaseConfig.get('GLACIER', 'EPSG')
-#             #-Project the layer to the user CRS
-#             processing.run("qgis:reprojectlayer", infile, t_srs, outfile)
-#             ########-Create gridded glacier outlines
-#             infile = outfile
-#             outfile = os.path.join(self.resultsPath, 'temp.tif')
-#             #-Create a class with the gdal methods
-#             m = SpatialProcessing(infile, outfile, s_srs, t_srs, res/10, extra='-a_nodata -3.40282e+38 -burn 1.0 ' + extent)
-#             self.threadWorker(SubProcessWorker([m.rasterize()], self.processLog1TextEdit, 'Gridded Randolph', outfile, True, 'raster'))
-#             # while self.thread.isRunning(): #-wait till the thread is finished before continue
-#             #     # fix_print_with_import
-#             #     print('')
-# #             ########-Reclassify (NaN->0)  -> Uncertain why this is not working correctly. Therefore commented and part below is used.
-# #             infile = outfile
-# #             outfile = os.path.join(self.resultsPath, 'temp2.tif')
-# #             processing.run("saga:reclassifygridvalues", infile, 0, 0, 0, 0, 0, 1, 2, 0, "0,0,0,0,0,0,0,0,0", 0, \
-# #                 True, 0, False, 0, outfile)
-# #             self.addCanvasLayer(outfile, 'temp2', 'raster')
-# #             return
-#             ########-Reclassify (NaN->0)
-#             #-First convert to pcraster map
-#             m.input = outfile
-#             m.output = os.path.join(self.resultsPath, 'temp.map')
-#             m.extra = '-of PCRaster'
-#             #-Execute the command(s) in a thread
-#             self.threadWorker(SubProcessWorker([m.rasterTranslate()], self.processLog1TextEdit, 'temp', m.output, False, 'raster'))
-#             # while self.thread.isRunning(): #-wait till the thread is finished before continue
-#             #     # fix_print_with_import
-#             #     print('')
-#             #-Replace NaN with zero
-#             infile = m.output
-#             outfile = os.path.join(self.resultsPath, 'temp2.map')
-#             command = self.pcrasterModelFile('"' + outfile + '" = cover("' + infile + '", 0)')
-#             #-Execute the command(s) in a thread
-#             self.threadWorker(SubProcessWorker(['pcrcalc -f ' + command], self.processLog1TextEdit, 'temp2', outfile, False, 'raster'))
-#             # while self.thread.isRunning(): #-wait till the thread is finished before continue
-#             #     # fix_print_with_import
-#             #     print('')
-#             #-Convert to Geotiff
-#             m.input = outfile
-#             m.output = os.path.join(self.resultsPath, 'temp2.tif')
-#             m.extra = ''
-#             #-Execute the command(s) in a thread
-#             self.threadWorker(SubProcessWorker([m.rasterTranslate()], self.processLog1TextEdit, 'temp2', m.output, True, 'raster'))
-#             # while self.thread.isRunning(): #-wait till the thread is finished before continue
-#             #     # fix_print_with_import
-#             #     print('')
-#             #######-Aggregate the results to the glacier fraction map
-#             infile = m.output
-#             outfile = os.path.join(self.resultsPath, 'temp3.tif')
-#             extent = str(self.xMin) + "," +  str(self.xMax) +"," + str(self.yMin) + "," + str(self.yMax)
-#             processing.run("grass:r.resamp.stats", {infile, 0, False, False, False, extent, res, outfile})
-#             self.addCanvasLayer(outfile, 'temp3', 'raster')
-#             mm+=1
-#             self.initialMapsProgressBar.setValue(int(mm/maps*100))
-#             ######-Convert to PCRaster map
-#             m.input = outfile
-#             m.output = os.path.join(self.resultsPath, self.glacierMaps['GlacFrac'])
-#             m.extra = '-of PCRaster'
-#             #-Execute the command(s) in a thread
-#             self.threadWorker(SubProcessWorker([m.rasterTranslate()], self.processLog1TextEdit, 'GlacFrac', m.output, True, 'raster'))
-#             # while self.thread.isRunning(): #-wait till the thread is finished before continue
-#             #     # fix_print_with_import
-#             #     print('')
-#             ########-Debris fraction map
-#             demfile = os.path.join(self.resultsPath, self.generalMaps['DEM'])
-#             slopefile = os.path.join(self.resultsPath, self.generalMaps['Slope'])
-#             glacfracfile = os.path.join(self.resultsPath, self.glacierMaps['GlacFrac'])
-#             outfile = os.path.join(self.resultsPath, self.glacierMaps['GlacFracDB'])
-#             command = self.pcrasterModelFile('"' + outfile + '"' + ' = scalar(if("' + demfile + '" lt 4100 and scalar(atan("' + slopefile + '")) lt 24 and "' + glacfracfile + '" gt 0, 1, 0))')
-#             #command = self.pcrasterModelFile('"' + outfile + '"' + ' = scalar(if("' + demfile + '" lt 4100 and scalar(atan("' + slopefile + '")) lt 24, 1, 0))')
-#             #-Execute the command(s) in a thread            
-#             self.threadWorker(SubProcessWorker(['pcrcalc -f ' + command], self.processLog1TextEdit, 'GlacFracDB', self.glacierMaps['GlacFracDB'], True, 'raster'))
-#             # while self.thread.isRunning(): #-wait till the thread is finished before continue
-#             #     # fix_print_with_import
-#             #     print('')
-#             mm+=1
-#             self.initialMapsProgressBar.setValue(int(mm/maps*100))
-#             ########-Clean ice fraction map
-#             infile = outfile
-#             outfile = os.path.join(self.resultsPath, self.glacierMaps['GlacFracCI'])
-#             command = self.pcrasterModelFile('"' + outfile + '"' + ' = scalar(if("' + infile + '" eq 0 and "' + glacfracfile + '" gt 0, 1, 0))')
-#             #-Execute the command(s) in a thread            
-#             self.threadWorker(SubProcessWorker(['pcrcalc -f ' + command], self.processLog1TextEdit, 'GlacFracCI', self.glacierMaps['GlacFracCI'], True, 'raster'))
-#             # while self.thread.isRunning(): #-wait till the thread is finished before continue
-#             #     # fix_print_with_import
-#             #     print('')
-#             mm+=1
-#             self.initialMapsProgressBar.setValue(int(mm/maps*100))
        
         self.initialMapsProgressBar.setValue(100)
         time.sleep(1)
@@ -1051,7 +926,8 @@ class SphyPreProcessDialog(QtWidgets.QDialog, Ui_SphyPreProcessDialog):
         for f in fi:
             os.remove(f)
         
-        
+    # %% END OF INITAL MAPS CREATION ------------------------------------------------------------
+
     #-Function to update the basin delineation settings        
     def updateDelineation(self, state):
         sender = self.sender().objectName()
@@ -1095,7 +971,11 @@ class SphyPreProcessDialog(QtWidgets.QDialog, Ui_SphyPreProcessDialog):
             extent = str(self.xMin) + ',' + str(self.xMax) + ',' + str(self.yMin) + ',' + str(self.yMax)
             outfile = os.path.join(self.resultsPath, 'temp.tif')
             self.processLog2TextEdit.append('Converting Outlet(s) to raster...')
-            processing.run("grass:v.to.rast.attribute", {self.outletsShp, 0, "id", extent, self.spatialRes, -1.0, 0.0001, outfile})
+            #processing.run("grass:v.to.rast.attribute", {self.outletsShp, 0, "id", extent, self.spatialRes, -1.0, 0.0001, outfile})
+            processing.run("grass7:v.to.rast", {'input':self.outletsShp,'type':0,'where':'','use':0,'attribute_column':'id','GRASS_REGION_PARAMETER':extent,
+                                                          'GRASS_REGION_CELLSIZE_PARAMETER': self.spatialRes, 'GRASS_SNAP_TOLERANCE_PARAMETER': -1.0,
+                                                          'GRASS_MIN_AREA_PARAMETER': 0.0001,'output':outfile})            
+            
             #####-Translate GeoTiff to PCRaster map
             infile = outfile
             outfile = os.path.join(self.resultsPath, 'temp.map')
@@ -1700,6 +1580,3 @@ class SphyPreProcessDialog(QtWidgets.QDialog, Ui_SphyPreProcessDialog):
             self.saveAsButton.setEnabled(1)
 #             self.saveButton.setEnabled(flag) 
             
-
-
-        
