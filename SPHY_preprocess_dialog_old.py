@@ -700,9 +700,12 @@ class SphyPreProcessDialog(QtWidgets.QDialog, Ui_SphyPreProcessDialog):
         m.input = m.output
         m.output = os.path.join(self.resultsPath, self.generalMaps['DEM'])
         commands.append(m.rasterTranslate())
-        #-Execute the command(s) 
-        self.runCommands(commands)
-        self.processLog1TextEdit.append('DEM is created')
+        #-Execute the command(s) in a thread
+        self.threadWorker(SubProcessWorker(commands, self.processLog1TextEdit, 'DEM', self.generalMaps['DEM'], True, 'raster', env =None))
+        #self.thread.quit()
+        # while self.thread.isRunning(): #-wait till the thread is finished before continue
+        #     # fix_print_with_import
+        #     print('running')
         #-set progress bar value
         mm+=1
         self.initialMapsProgressBar.setValue(int(mm/maps*100))
@@ -710,9 +713,12 @@ class SphyPreProcessDialog(QtWidgets.QDialog, Ui_SphyPreProcessDialog):
         print('2. CREATING SLOPE')
         command = self.pcrasterModelFile('"' + os.path.join(self.resultsPath, self.generalMaps['Slope']) + '"'\
                                         + ' = slope(' + '"' + os.path.join(self.resultsPath, self.generalMaps['DEM']) + '"' + ')')
-        #-Execute the command(s) 
-        self.runCommands(['pcrcalc -f ' + command])
-        self.processLog1TextEdit.append('Slope is created')
+        self.threadWorker(SubProcessWorker(['pcrcalc -f ' + command], self.processLog1TextEdit, 'Slope', self.generalMaps['Slope'], True, 'raster'))
+        self.thread.quit()
+        # while self.thread.isRunning(): #-wait till the thread is finished before continue
+        #     # fix_print_with_import
+        #     print('')
+        #-remove temporary tiffs from results dir
         fi = glob.glob(os.path.join(self.resultsPath, 'temp.*'))
         for f in fi:
             os.remove(f)
@@ -735,34 +741,12 @@ class SphyPreProcessDialog(QtWidgets.QDialog, Ui_SphyPreProcessDialog):
         m.input = m.output
         m.output = os.path.join(self.resultsPath, self.generalMaps['Latitudes'])
         commands.append(m.rasterTranslate())
-        #-Execute the command(s) 
-        self.runCommands(commands)
-        self.processLog1TextEdit.append('LATITUDE is created')
-        fi = glob.glob(os.path.join(self.resultsPath, 'temp.*'))
-        for f in fi:
-            os.remove(f)
-        #-set progress bar value
-        mm+=1
-        self.initialMapsProgressBar.setValue(int(mm/maps*100))
-        # %% 4. CREATING LANDUSE ------------------------------------------------------------
-        print('4. CREATING LANDUSE')
-        #-create the commands to execute
-        commands = []
-        infile = os.path.join(self.databasePath, self.databaseConfig.get('LANDUSE', 'file'))
-        outfile = os.path.join(self.resultsPath, 'temp.tif')
-        s_srs = 'EPSG:' + self.databaseConfig.get('LANDUSE', 'EPSG')
-        #-Create a class with the gdal methods
-        m = SpatialProcessing(infile, outfile, s_srs, t_srs, res, resampling='mode', rtype='Int32', extra=extent)
-        #-Project, clip and resample
-        commands.append(m.reproject())
-        #-Convert to PCRaster map
-        m.extra = '-of PCRaster'
-        m.input = m.output
-        m.output = os.path.join(self.resultsPath, self.generalMaps['LandUse'])
-        commands.append(m.rasterTranslate())
-        #-Execute the command(s) 
-        self.runCommands(commands)
-        self.processLog1TextEdit.append('LANDUSE is created')
+        #-Execute the command(s) in a thread
+        self.threadWorker(SubProcessWorker(commands, self.processLog1TextEdit, 'Latitudes', self.generalMaps['Latitudes'], True, 'raster'))
+        self.thread.quit()
+        # while self.thread.isRunning(): #-wait till the thread is finished before continue
+        #     # fix_print_with_import
+        #     print('')
         #-remove temporary tiffs from results dir
         fi = glob.glob(os.path.join(self.resultsPath, 'temp.*'))
         for f in fi:
@@ -770,88 +754,138 @@ class SphyPreProcessDialog(QtWidgets.QDialog, Ui_SphyPreProcessDialog):
         #-set progress bar value
         mm+=1
         self.initialMapsProgressBar.setValue(int(mm/maps*100))
-        # %% 5. CREATING SOIL MAPS ------------------------------------------------------------
-        print('5. CREATING SOIL MAPS')
-        soilMapTiffs = {'Root_field': 'root_field_file', 'Root_sat': 'root_sat_file', 'Root_dry': 'root_dry_file'\
-                        ,'Root_wilt': 'root_wilt_file', 'Root_Ksat': 'root_ksat_file', 'Sub_field': 'sub_field_file'\
-                        ,'Sub_sat': 'sub_sat_file', 'Sub_Ksat': 'sub_ksat_file'}
-        for smap in soilMapTiffs:
-            #-create the commands to execute
-            commands = []
-            infile = os.path.join(self.databasePath, self.databaseConfig.get('SOIL', soilMapTiffs[smap]))
-            outfile = os.path.join(self.resultsPath, 'temp.tif')
-            s_srs = 'EPSG:' + self.databaseConfig.get('SOIL', 'EPSG')
-            #-Create a class with the gdal methods
-            m = SpatialProcessing(infile, outfile, s_srs, t_srs, res, extra=extent)
-            #-Project, clip and resample
-            commands.append(m.reproject())
-            #-Convert to PCRaster map
-            m.extra = '-of PCRaster'
-            m.input = m.output
-            m.output = os.path.join(self.resultsPath, self.generalMaps[smap])
-            commands.append(m.rasterTranslate())
-            #-Execute the command(s) 
-            self.runCommands(commands)
-            self.processLog1TextEdit.append(smap + ' is created')
-                #-remove temporary tiffs from results dir
-            fi = glob.glob(os.path.join(self.resultsPath, 'temp.*'))
-            for f in fi:
-                os.remove(f)
-            #-set progress bar value
-            mm+=1
-            self.initialMapsProgressBar.setValue(int(mm/maps*100))
+        # # %% 4. CREATING LANDUSE ------------------------------------------------------------
+        # print('4. CREATING LANDUSE')
+        # #-create the commands to execute
+        # commands = []
+        # infile = os.path.join(self.databasePath, self.databaseConfig.get('LANDUSE', 'file'))
+        # outfile = os.path.join(self.resultsPath, 'temp.tif')
+        # s_srs = 'EPSG:' + self.databaseConfig.get('LANDUSE', 'EPSG')
+        # #-Create a class with the gdal methods
+        # m = SpatialProcessing(infile, outfile, s_srs, t_srs, res, resampling='mode', rtype='Int32', extra=extent)
+        # #-Project, clip and resample
+        # commands.append(m.reproject())
+        # #-Convert to PCRaster map
+        # m.extra = '-of PCRaster'
+        # m.input = m.output
+        # m.output = os.path.join(self.resultsPath, self.generalMaps['LandUse'])
+        # commands.append(m.rasterTranslate())
+        # #-Execute the command(s) in a thread
+        # self.threadWorker(SubProcessWorker(commands, self.processLog1TextEdit, 'LandUse', self.generalMaps['LandUse'], True, 'raster'))
+        # self.thread.quit()
+        # # while self.thread.isRunning(): #-wait till the thread is finished before continue
+        # #     # fix_print_with_import
+        # #     print('')
+        # #-remove temporary tiffs from results dir
+        # fi = glob.glob(os.path.join(self.resultsPath, 'temp.*'))
+        # for f in fi:
+        #     os.remove(f)
+        # #-set progress bar value
+        # mm+=1
+        # self.initialMapsProgressBar.setValue(int(mm/maps*100))
+        # # %% 5. CREATING SOIL MAPS ------------------------------------------------------------
+        # print('5. CREATING SOIL MAPS')
+        # soilMapTiffs = {'Root_field': 'root_field_file', 'Root_sat': 'root_sat_file', 'Root_dry': 'root_dry_file'\
+        #                 ,'Root_wilt': 'root_wilt_file', 'Root_Ksat': 'root_ksat_file', 'Sub_field': 'sub_field_file'\
+        #                 ,'Sub_sat': 'sub_sat_file', 'Sub_Ksat': 'sub_ksat_file'}
+        # for smap in soilMapTiffs:
+        #     #-create the commands to execute
+        #     commands = []
+        #     infile = os.path.join(self.databasePath, self.databaseConfig.get('SOIL', soilMapTiffs[smap]))
+        #     outfile = os.path.join(self.resultsPath, 'temp.tif')
+        #     s_srs = 'EPSG:' + self.databaseConfig.get('SOIL', 'EPSG')
+        #     #-Create a class with the gdal methods
+        #     m = SpatialProcessing(infile, outfile, s_srs, t_srs, res, extra=extent)
+        #     #-Project, clip and resample
+        #     commands.append(m.reproject())
+        #     #-Convert to PCRaster map
+        #     m.extra = '-of PCRaster'
+        #     m.input = m.output
+        #     m.output = os.path.join(self.resultsPath, self.generalMaps[smap])
+        #     commands.append(m.rasterTranslate())
+        #     #-Execute the command(s) in a thread
+        #     self.threadWorker(SubProcessWorker(commands, self.processLog1TextEdit, smap, self.generalMaps[smap], True, 'raster'))
+        #     self.thread.quit()
+        #     # while self.thread.isRunning(): #-wait till the thread is finished before continue
+        #     #     # fix_print_with_import
+        #     #     print('')
+        #     #-remove temporary tiffs from results dir
+        #     fi = glob.glob(os.path.join(self.resultsPath, 'temp.*'))
+        #     for f in fi:
+        #         os.remove(f)
+        #     #-set progress bar value
+        #     mm+=1
+        #     self.initialMapsProgressBar.setValue(int(mm/maps*100))
             
 
         # %% 6. CREATING ROUTING MAPS ------------------------------------------------------------
         print('6. CREATING ROUTING MAPS')
         if self.currentConfig.getint('MODULES', 'routing') == 1:
-
+            #-delete old raster layers from canvas and disk if exists
+#             for k in self.routingMaps:
+#                 try:
+#                     self.deleteLayer(os.path.join(self.resultsPath, self.routingMaps[k]), 'raster')
+#                 except:
+#                     pass
+            
             ### LDD map #######
             command = self.pcrasterModelFile('"' + os.path.join(self.resultsPath, self.routingMaps['LDD']) + '"'\
                             + ' = lddcreate(' + '"' + os.path.join(self.resultsPath, self.generalMaps['DEM']) + '"' + ', 1e31, 1e31, 1e31, 1e31)')
-            #-Execute the command(s) 
-            self.runCommands(['pcrcalc -f ' + command])
-            self.processLog1TextEdit.append('LDD is created')
+            #-Execute the command(s) in a thread
+            self.threadWorker(SubProcessWorker(['pcrcalc -f ' + command], self.processLog1TextEdit, 'LDD', self.routingMaps['LDD'], False, 'raster'))
+            # while self.thread.isRunning(): #-wait till the thread is finished before continue
+            #     # fix_print_with_import
+            #     print('')
             ### LDD REPAIRED map ######
             command = self.pcrasterModelFile('"' + os.path.join(self.resultsPath, self.routingMaps['LDD']) + '"'\
                             + ' = lddrepair(' + '"' + os.path.join(self.resultsPath, self.routingMaps['LDD']) + '"' + ')')
-            #-Execute the command(s) 
-            self.runCommands(['pcrcalc -f ' + command])
-            self.processLog1TextEdit.append('LDD repaired is created')
+            #-Execute the command(s) in a thread
+            self.threadWorker(SubProcessWorker(['pcrcalc -f ' + command], self.processLog1TextEdit, 'LDD', self.routingMaps['LDD'], False, 'raster'))
+            # while self.thread.isRunning(): #-wait till the thread is finished before continue
+            #     # fix_print_with_import
+            #     print('')
             #-set progress bar value
             mm+=1
             self.initialMapsProgressBar.setValue(int(mm/maps*100))
             ###### Accuflux map #############
             command = self.pcrasterModelFile('"' + os.path.join(self.resultsPath, self.routingMaps['AccuFlux']) + '"'\
                             + ' = accuflux(' + '"' + os.path.join(self.resultsPath, self.routingMaps['LDD']) + '"' + ',1)')
-            #-Execute the command(s) 
-            self.runCommands(['pcrcalc -f ' + command])
-            self.processLog1TextEdit.append('Accuflux is created')
+            #-Execute the command(s) in a thread
+            self.threadWorker(SubProcessWorker(['pcrcalc -f ' + command], self.processLog1TextEdit, 'AccuFlux', self.routingMaps['AccuFlux'], True, 'raster'))
+            # while self.thread.isRunning(): #-wait till the thread is finished before continue
+            #     # fix_print_with_import
+            #     print('')
             #-set progress bar value
             mm+=1
             self.initialMapsProgressBar.setValue(int(mm/maps*100))
             ####### Rivers map ########## assumed >50 cells
             command = self.pcrasterModelFile('"' + os.path.join(self.resultsPath, self.routingMaps['Rivers']) + '"'\
                             + ' = ' + '"' + os.path.join(self.resultsPath, self.routingMaps['AccuFlux']) + '"' + '> 50')
-            #-Execute the command(s) 
-            self.runCommands(['pcrcalc -f ' + command])
-            self.processLog1TextEdit.append('Rivers is created')
+            #-Execute the command(s) in a thread
+            self.threadWorker(SubProcessWorker(['pcrcalc -f ' + command], self.processLog1TextEdit, 'Rivers', self.routingMaps['Rivers'], True, 'raster'))
+            # while self.thread.isRunning(): #-wait till the thread is finished before continue
+            #     # fix_print_with_import
+            #     print('')
             mm+=1
             self.initialMapsProgressBar.setValue(int(mm/maps*100))
             ######## Outlets #########  is initially the pits in the ldd (later the user can specify outlets)
             command = self.pcrasterModelFile('"' + os.path.join(self.resultsPath, self.routingMaps['Outlets']) + '"'\
                             + ' = pit(' + '"' + os.path.join(self.resultsPath, self.routingMaps['LDD']) + '"' + ')')
-            #-Execute the command(s) 
-            self.runCommands(['pcrcalc -f ' + command])
-            self.processLog1TextEdit.append('Outlets is created')
+            #-Execute the command(s) in a thread
+            self.threadWorker(SubProcessWorker(['pcrcalc -f ' + command], self.processLog1TextEdit, 'Outlets', self.routingMaps['Outlets'], True, 'raster'))
+            # while self.thread.isRunning(): #-wait till the thread is finished before continue
+            #     # fix_print_with_import
+            #     print('')
             mm+=1
             self.initialMapsProgressBar.setValue(int(mm/maps*100))
             ######## Sub-basins #########  is initially based on outlets (pits in the ldd (later the user can specify outlets and re-create sub-basins))
             command = self.pcrasterModelFile('"' + os.path.join(self.resultsPath, self.routingMaps['Sub-basins']) + '"'\
                             + ' = subcatchment(' + '"' + os.path.join(self.resultsPath, self.routingMaps['LDD']) + '"' + ',' + '"' + os.path.join(self.resultsPath, self.routingMaps['Outlets']) + '"' + ')')
-            #-Execute the command(s) 
-            self.runCommands(['pcrcalc -f ' + command])
-            self.processLog1TextEdit.append('SubBasins is created')
+            #-Execute the command(s) in a thread
+            self.threadWorker(SubProcessWorker(['pcrcalc -f ' + command], self.processLog1TextEdit, 'Sub-basins', self.routingMaps['Sub-basins'], True, 'raster'))
+            # while self.thread.isRunning(): #-wait till the thread is finished before continue
+            #     # fix_print_with_import
+            #     print('')
             mm+=1
             self.initialMapsProgressBar.setValue(int(mm/maps*100))
                 
@@ -888,9 +922,9 @@ class SphyPreProcessDialog(QtWidgets.QDialog, Ui_SphyPreProcessDialog):
         self.delineateButton.setEnabled(1)
 
         #-remove AUX FILES
-        fi = glob.glob(os.path.join(self.resultsPath, '*.aux.xml'))
-        for f in fi:
-            os.remove(f)
+        # fi = glob.glob(os.path.join(self.resultsPath, '*.aux.xml'))
+        # for f in fi:
+        #     os.remove(f)
         
     # %% END OF INITAL MAPS CREATION ------------------------------------------------------------
 
@@ -1221,24 +1255,6 @@ class SphyPreProcessDialog(QtWidgets.QDialog, Ui_SphyPreProcessDialog):
         self.forcingProgressBar.setValue(0)
         
 
-    def runCommands(self,commands):
-        # if len(commands)==1:
-        #     commands=[commands]
-        for command in commands:
-            result = subprocess.run(
-                command,
-                shell=True,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                text=True,
-                check= True
-            )
-
-        if result.returncode != 0:
-            print([f"Command '{command}' failed with return code {result.returncode}"])
-        else:
-            print([f"Command '{command}' completed successfully"])
-        
     #-Start the worker in a thread
     def threadWorker(self, worker):
         # start the worker in a new thread
