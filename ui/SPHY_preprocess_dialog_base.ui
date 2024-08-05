@@ -19,14 +19,14 @@
    </property>
    <property name="geometry">
     <rect>
-     <x>9</x>
-     <y>50</y>
+     <x>0</x>
+     <y>60</y>
      <width>2052</width>
      <height>598</height>
     </rect>
    </property>
    <property name="currentIndex">
-    <number>2</number>
+    <number>0</number>
    </property>
    <widget class="QWidget" name="generalTab">
     <attribute name="title">
@@ -265,128 +265,15 @@ button to identify the corresponding UTM zone for your model area.</string>
     <attribute name="title">
      <string>Area selection</string>
     </attribute>
-    <widget class="QGroupBox" name="selectAreagroupBox">
-     <property name="geometry">
-      <rect>
-       <x>9</x>
-       <y>9</y>
-       <width>181</width>
-       <height>331</height>
-      </rect>
-     </property>
-     <property name="autoFillBackground">
-      <bool>true</bool>
-     </property>
-     <property name="title">
-      <string>Select area</string>
-     </property>
-     <widget class="QToolButton" name="selectAreaButton">
-      <property name="geometry">
-       <rect>
-        <x>10</x>
-        <y>48</y>
-        <width>157</width>
-        <height>123</height>
-       </rect>
-      </property>
-      <property name="palette">
-       <palette>
-        <active>
-         <colorrole role="ButtonText">
-          <brush brushstyle="SolidPattern">
-           <color alpha="255">
-            <red>0</red>
-            <green>0</green>
-            <blue>255</blue>
-           </color>
-          </brush>
-         </colorrole>
-        </active>
-        <inactive>
-         <colorrole role="ButtonText">
-          <brush brushstyle="SolidPattern">
-           <color alpha="255">
-            <red>0</red>
-            <green>0</green>
-            <blue>255</blue>
-           </color>
-          </brush>
-         </colorrole>
-        </inactive>
-        <disabled>
-         <colorrole role="ButtonText">
-          <brush brushstyle="SolidPattern">
-           <color alpha="255">
-            <red>120</red>
-            <green>120</green>
-            <blue>120</blue>
-           </color>
-          </brush>
-         </colorrole>
-        </disabled>
-       </palette>
-      </property>
-      <property name="font">
-       <font>
-        <family>Comic Sans MS</family>
-        <pointsize>9</pointsize>
-        <weight>50</weight>
-        <italic>false</italic>
-        <bold>false</bold>
-        <stylestrategy>NoAntialias</stylestrategy>
-       </font>
-      </property>
-      <property name="cursor">
-       <cursorShape>PointingHandCursor</cursorShape>
-      </property>
-      <property name="mouseTracking">
-       <bool>false</bool>
-      </property>
-      <property name="autoFillBackground">
-       <bool>true</bool>
-      </property>
-      <property name="text">
-       <string>Click to select area</string>
-      </property>
-      <property name="icon">
-       <iconset>
-        <normaloff>:/plugins/SphyPreProcess/select_area.png</normaloff>:/plugins/SphyPreProcess/select_area.png</iconset>
-      </property>
-      <property name="iconSize">
-       <size>
-        <width>150</width>
-        <height>150</height>
-       </size>
-      </property>
-      <property name="toolButtonStyle">
-       <enum>Qt::ToolButtonTextUnderIcon</enum>
-      </property>
-     </widget>
-     <widget class="QCheckBox" name="showBackgroundMapcheckBox">
-      <property name="geometry">
-       <rect>
-        <x>11</x>
-        <y>24</y>
-        <width>158</width>
-        <height>17</height>
-       </rect>
-      </property>
-      <property name="text">
-       <string>Show background layers</string>
-      </property>
-     </widget>
-     <zorder>showBackgroundMapcheckBox</zorder>
-     <zorder>selectAreaButton</zorder>
-    </widget>
     <widget class="QGroupBox" name="areaPropertiesGroupBox">
      <property name="enabled">
       <bool>true</bool>
      </property>
      <property name="geometry">
       <rect>
-       <x>200</x>
-       <y>9</y>
-       <width>471</width>
+       <x>0</x>
+       <y>0</y>
+       <width>671</width>
        <height>331</height>
       </rect>
      </property>
@@ -643,6 +530,119 @@ button to identify the corresponding UTM zone for your model area.</string>
         </widget>
        </item>
       </layout>
+     </widget>
+     <widget class="QGroupBox" name="selectAreagroupBox">
+      <property name="geometry">
+       <rect>
+        <x>470</x>
+        <y>10</y>
+        <width>181</width>
+        <height>311</height>
+       </rect>
+      </property>
+      <property name="autoFillBackground">
+       <bool>true</bool>
+      </property>
+      <property name="title">
+       <string>Select area</string>
+      </property>
+      <widget class="QToolButton" name="selectAreaButton">
+       <property name="geometry">
+        <rect>
+         <x>10</x>
+         <y>48</y>
+         <width>157</width>
+         <height>123</height>
+        </rect>
+       </property>
+       <property name="palette">
+        <palette>
+         <active>
+          <colorrole role="ButtonText">
+           <brush brushstyle="SolidPattern">
+            <color alpha="255">
+             <red>0</red>
+             <green>0</green>
+             <blue>255</blue>
+            </color>
+           </brush>
+          </colorrole>
+         </active>
+         <inactive>
+          <colorrole role="ButtonText">
+           <brush brushstyle="SolidPattern">
+            <color alpha="255">
+             <red>0</red>
+             <green>0</green>
+             <blue>255</blue>
+            </color>
+           </brush>
+          </colorrole>
+         </inactive>
+         <disabled>
+          <colorrole role="ButtonText">
+           <brush brushstyle="SolidPattern">
+            <color alpha="255">
+             <red>120</red>
+             <green>120</green>
+             <blue>120</blue>
+            </color>
+           </brush>
+          </colorrole>
+         </disabled>
+        </palette>
+       </property>
+       <property name="font">
+        <font>
+         <family>Comic Sans MS</family>
+         <pointsize>9</pointsize>
+         <weight>50</weight>
+         <italic>false</italic>
+         <bold>false</bold>
+         <stylestrategy>NoAntialias</stylestrategy>
+        </font>
+       </property>
+       <property name="cursor">
+        <cursorShape>PointingHandCursor</cursorShape>
+       </property>
+       <property name="mouseTracking">
+        <bool>false</bool>
+       </property>
+       <property name="autoFillBackground">
+        <bool>true</bool>
+       </property>
+       <property name="text">
+        <string>Click to select area</string>
+       </property>
+       <property name="icon">
+        <iconset resource="resources.qrc">
+         <normaloff>:/plugins/SphyPreProcess/images/select_area.png</normaloff>:/plugins/SphyPreProcess/images/select_area.png</iconset>
+       </property>
+       <property name="iconSize">
+        <size>
+         <width>150</width>
+         <height>150</height>
+        </size>
+       </property>
+       <property name="toolButtonStyle">
+        <enum>Qt::ToolButtonTextUnderIcon</enum>
+       </property>
+      </widget>
+      <widget class="QCheckBox" name="showBackgroundMapcheckBox">
+       <property name="geometry">
+        <rect>
+         <x>11</x>
+         <y>24</y>
+         <width>158</width>
+         <height>17</height>
+        </rect>
+       </property>
+       <property name="text">
+        <string>Show background layers</string>
+       </property>
+      </widget>
+      <zorder>showBackgroundMapcheckBox</zorder>
+      <zorder>selectAreaButton</zorder>
      </widget>
     </widget>
    </widget>
@@ -1373,8 +1373,8 @@ button to identify the corresponding UTM zone for your model area.</string>
    <slot>updatePath()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>475</x>
-     <y>119</y>
+     <x>463</x>
+     <y>128</y>
     </hint>
     <hint type="destinationlabel">
      <x>583</x>
@@ -1389,8 +1389,8 @@ button to identify the corresponding UTM zone for your model area.</string>
    <slot>updatePath()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>429</x>
-     <y>154</y>
+     <x>476</x>
+     <y>164</y>
     </hint>
     <hint type="destinationlabel">
      <x>526</x>
@@ -1405,8 +1405,8 @@ button to identify the corresponding UTM zone for your model area.</string>
    <slot>changeCRS()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>145</x>
-     <y>217</y>
+     <x>174</x>
+     <y>226</y>
     </hint>
     <hint type="destinationlabel">
      <x>6</x>
@@ -1421,8 +1421,8 @@ button to identify the corresponding UTM zone for your model area.</string>
    <slot>changeCRS()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>195</x>
-     <y>212</y>
+     <x>231</x>
+     <y>224</y>
     </hint>
     <hint type="destinationlabel">
      <x>6</x>
@@ -1437,8 +1437,8 @@ button to identify the corresponding UTM zone for your model area.</string>
    <slot>showUTM()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>74</x>
-     <y>243</y>
+     <x>87</x>
+     <y>252</y>
     </hint>
     <hint type="destinationlabel">
      <x>4</x>
@@ -1453,8 +1453,8 @@ button to identify the corresponding UTM zone for your model area.</string>
    <slot>updateDate()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>441</x>
-     <y>248</y>
+     <x>493</x>
+     <y>253</y>
     </hint>
     <hint type="destinationlabel">
      <x>700</x>
@@ -1469,8 +1469,8 @@ button to identify the corresponding UTM zone for your model area.</string>
    <slot>updateDate()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>628</x>
-     <y>247</y>
+     <x>670</x>
+     <y>253</y>
     </hint>
     <hint type="destinationlabel">
      <x>700</x>
@@ -1517,8 +1517,8 @@ button to identify the corresponding UTM zone for your model area.</string>
    <slot>recreateArea()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>579</x>
-     <y>231</y>
+     <x>621</x>
+     <y>237</y>
     </hint>
     <hint type="destinationlabel">
      <x>698</x>
@@ -1606,6 +1606,246 @@ button to identify the corresponding UTM zone for your model area.</string>
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>selectOutletsButton</sender>
+   <signal>clicked()</signal>
+   <receiver>SphyPreProcessDialog</receiver>
+   <slot>updateDelineation()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>634</x>
+     <y>115</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>613</x>
+     <y>36</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>clipMaskCheckBox</sender>
+   <signal>stateChanged(int)</signal>
+   <receiver>SphyPreProcessDialog</receiver>
+   <slot>updateDelineation()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>36</x>
+     <y>140</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>5</x>
+     <y>147</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>createSubBasinCheckBox</sender>
+   <signal>stateChanged(int)</signal>
+   <receiver>SphyPreProcessDialog</receiver>
+   <slot>updateDelineation()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>661</x>
+     <y>142</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>653</x>
+     <y>34</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>delineateButton</sender>
+   <signal>clicked()</signal>
+   <receiver>SphyPreProcessDialog</receiver>
+   <slot>delineate()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>400</x>
+     <y>399</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>459</x>
+     <y>34</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>createInitialMapsToolButton</sender>
+   <signal>clicked()</signal>
+   <receiver>SphyPreProcessDialog</receiver>
+   <slot>createInitMaps()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>612</x>
+     <y>394</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>653</x>
+     <y>20</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>selectStationsButton</sender>
+   <signal>clicked()</signal>
+   <receiver>SphyPreProcessDialog</receiver>
+   <slot>updateStations()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>608</x>
+     <y>115</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>578</x>
+     <y>13</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>stationsButton</sender>
+   <signal>clicked()</signal>
+   <receiver>SphyPreProcessDialog</receiver>
+   <slot>createStations()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>55</x>
+     <y>390</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>398</x>
+     <y>8</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>precFlagCheckBox</sender>
+   <signal>stateChanged(int)</signal>
+   <receiver>SphyPreProcessDialog</receiver>
+   <slot>updateForcing()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>48</x>
+     <y>113</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>10</x>
+     <y>47</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>tempFlagCheckBox</sender>
+   <signal>clicked()</signal>
+   <receiver>SphyPreProcessDialog</receiver>
+   <slot>updateForcing()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>345</x>
+     <y>112</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>408</x>
+     <y>29</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>tempDBRadioButton</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>SphyPreProcessDialog</receiver>
+   <slot>updateForcing()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>51</x>
+     <y>301</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>4</x>
+     <y>304</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>precLocToolButton</sender>
+   <signal>clicked()</signal>
+   <receiver>SphyPreProcessDialog</receiver>
+   <slot>updateForcing()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>340</x>
+     <y>215</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>675</x>
+     <y>9</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>tempLocToolButton</sender>
+   <signal>clicked()</signal>
+   <receiver>SphyPreProcessDialog</receiver>
+   <slot>updateForcing()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>319</x>
+     <y>350</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>667</x>
+     <y>40</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>precDataToolButton</sender>
+   <signal>clicked()</signal>
+   <receiver>SphyPreProcessDialog</receiver>
+   <slot>updateForcing()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>294</x>
+     <y>244</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>-1</x>
+     <y>438</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>tempDataToolButton</sender>
+   <signal>clicked()</signal>
+   <receiver>SphyPreProcessDialog</receiver>
+   <slot>updateForcing()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>301</x>
+     <y>380</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>4</x>
+     <y>395</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>forcingToolButton</sender>
+   <signal>clicked()</signal>
+   <receiver>SphyPreProcessDialog</receiver>
+   <slot>createForcing()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>604</x>
+     <y>388</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>665</x>
+     <y>0</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
   <slot>createNewProject()</slot>
@@ -1620,5 +1860,12 @@ button to identify the corresponding UTM zone for your model area.</string>
   <slot>recreateArea()</slot>
   <slot>createClone()</slot>
   <slot>updateModules()</slot>
+  <slot>updateDelineation()</slot>
+  <slot>delineate()</slot>
+  <slot>createInitMaps()</slot>
+  <slot>updateStations()</slot>
+  <slot>createStations()</slot>
+  <slot>updateForcing()</slot>
+  <slot>createForcing()</slot>
  </slots>
 </ui>

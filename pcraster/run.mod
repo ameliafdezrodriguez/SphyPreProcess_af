@@ -1,1 +1,1 @@
-"E:/amelia/SPHY_demo/SPHY-3.0-test/input/subbasins.map" = subcatchment("E:/amelia/SPHY_demo/SPHY-3.0-test/input/ldd.map","E:/amelia/SPHY_demo/SPHY-3.0-test/input/outlets.map")
+"E:/amelia/SPHY_demo/SPHY-3.0-test/input2/stations.map" = nominal("E:/amelia/SPHY_demo/SPHY-3.0-test/input2/temp.map")

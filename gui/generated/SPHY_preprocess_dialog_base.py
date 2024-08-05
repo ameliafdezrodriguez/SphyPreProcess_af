@@ -17,7 +17,7 @@ class Ui_SphyPreProcessDialog(object):
         SphyPreProcessDialog.resize(697, 481)
         self.Tab = QtWidgets.QTabWidget(SphyPreProcessDialog)
         self.Tab.setEnabled(True)
-        self.Tab.setGeometry(QtCore.QRect(9, 50, 2052, 598))
+        self.Tab.setGeometry(QtCore.QRect(0, 60, 2052, 598))
         self.Tab.setObjectName("Tab")
         self.generalTab = QtWidgets.QWidget()
         self.generalTab.setObjectName("generalTab")
@@ -120,48 +120,9 @@ class Ui_SphyPreProcessDialog(object):
         self.Tab.addTab(self.generalTab, "")
         self.areaSelectionTab = QtWidgets.QWidget()
         self.areaSelectionTab.setObjectName("areaSelectionTab")
-        self.selectAreagroupBox = QtWidgets.QGroupBox(self.areaSelectionTab)
-        self.selectAreagroupBox.setGeometry(QtCore.QRect(9, 9, 181, 331))
-        self.selectAreagroupBox.setAutoFillBackground(True)
-        self.selectAreagroupBox.setObjectName("selectAreagroupBox")
-        self.selectAreaButton = QtWidgets.QToolButton(self.selectAreagroupBox)
-        self.selectAreaButton.setGeometry(QtCore.QRect(10, 48, 157, 123))
-        palette = QtGui.QPalette()
-        brush = QtGui.QBrush(QtGui.QColor(0, 0, 255))
-        brush.setStyle(QtCore.Qt.SolidPattern)
-        palette.setBrush(QtGui.QPalette.Active, QtGui.QPalette.ButtonText, brush)
-        brush = QtGui.QBrush(QtGui.QColor(0, 0, 255))
-        brush.setStyle(QtCore.Qt.SolidPattern)
-        palette.setBrush(QtGui.QPalette.Inactive, QtGui.QPalette.ButtonText, brush)
-        brush = QtGui.QBrush(QtGui.QColor(120, 120, 120))
-        brush.setStyle(QtCore.Qt.SolidPattern)
-        palette.setBrush(QtGui.QPalette.Disabled, QtGui.QPalette.ButtonText, brush)
-        self.selectAreaButton.setPalette(palette)
-        font = QtGui.QFont()
-        font.setFamily("Comic Sans MS")
-        font.setPointSize(9)
-        font.setBold(False)
-        font.setItalic(False)
-        font.setWeight(50)
-        font.setStyleStrategy(QtGui.QFont.NoAntialias)
-        self.selectAreaButton.setFont(font)
-        self.selectAreaButton.setCursor(QtGui.QCursor(QtCore.Qt.PointingHandCursor))
-        self.selectAreaButton.setMouseTracking(False)
-        self.selectAreaButton.setAutoFillBackground(True)
-        icon = QtGui.QIcon()
-        icon.addPixmap(QtGui.QPixmap(":/plugins/SphyPreProcess/select_area.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
-        self.selectAreaButton.setIcon(icon)
-        self.selectAreaButton.setIconSize(QtCore.QSize(150, 150))
-        self.selectAreaButton.setToolButtonStyle(QtCore.Qt.ToolButtonTextUnderIcon)
-        self.selectAreaButton.setObjectName("selectAreaButton")
-        self.showBackgroundMapcheckBox = QtWidgets.QCheckBox(self.selectAreagroupBox)
-        self.showBackgroundMapcheckBox.setGeometry(QtCore.QRect(11, 24, 158, 17))
-        self.showBackgroundMapcheckBox.setObjectName("showBackgroundMapcheckBox")
-        self.showBackgroundMapcheckBox.raise_()
-        self.selectAreaButton.raise_()
         self.areaPropertiesGroupBox = QtWidgets.QGroupBox(self.areaSelectionTab)
         self.areaPropertiesGroupBox.setEnabled(True)
-        self.areaPropertiesGroupBox.setGeometry(QtCore.QRect(200, 9, 471, 331))
+        self.areaPropertiesGroupBox.setGeometry(QtCore.QRect(0, 0, 671, 331))
         self.areaPropertiesGroupBox.setObjectName("areaPropertiesGroupBox")
         self.horizontalLayoutWidget_8 = QtWidgets.QWidget(self.areaPropertiesGroupBox)
         self.horizontalLayoutWidget_8.setGeometry(QtCore.QRect(10, 51, 215, 26))
@@ -287,6 +248,45 @@ class Ui_SphyPreProcessDialog(object):
         self.cloneLineEdit.setReadOnly(True)
         self.cloneLineEdit.setObjectName("cloneLineEdit")
         self.horizontalLayout_12.addWidget(self.cloneLineEdit)
+        self.selectAreagroupBox = QtWidgets.QGroupBox(self.areaPropertiesGroupBox)
+        self.selectAreagroupBox.setGeometry(QtCore.QRect(470, 10, 181, 311))
+        self.selectAreagroupBox.setAutoFillBackground(True)
+        self.selectAreagroupBox.setObjectName("selectAreagroupBox")
+        self.selectAreaButton = QtWidgets.QToolButton(self.selectAreagroupBox)
+        self.selectAreaButton.setGeometry(QtCore.QRect(10, 48, 157, 123))
+        palette = QtGui.QPalette()
+        brush = QtGui.QBrush(QtGui.QColor(0, 0, 255))
+        brush.setStyle(QtCore.Qt.SolidPattern)
+        palette.setBrush(QtGui.QPalette.Active, QtGui.QPalette.ButtonText, brush)
+        brush = QtGui.QBrush(QtGui.QColor(0, 0, 255))
+        brush.setStyle(QtCore.Qt.SolidPattern)
+        palette.setBrush(QtGui.QPalette.Inactive, QtGui.QPalette.ButtonText, brush)
+        brush = QtGui.QBrush(QtGui.QColor(120, 120, 120))
+        brush.setStyle(QtCore.Qt.SolidPattern)
+        palette.setBrush(QtGui.QPalette.Disabled, QtGui.QPalette.ButtonText, brush)
+        self.selectAreaButton.setPalette(palette)
+        font = QtGui.QFont()
+        font.setFamily("Comic Sans MS")
+        font.setPointSize(9)
+        font.setBold(False)
+        font.setItalic(False)
+        font.setWeight(50)
+        font.setStyleStrategy(QtGui.QFont.NoAntialias)
+        self.selectAreaButton.setFont(font)
+        self.selectAreaButton.setCursor(QtGui.QCursor(QtCore.Qt.PointingHandCursor))
+        self.selectAreaButton.setMouseTracking(False)
+        self.selectAreaButton.setAutoFillBackground(True)
+        icon = QtGui.QIcon()
+        icon.addPixmap(QtGui.QPixmap(":/plugins/SphyPreProcess/images/select_area.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        self.selectAreaButton.setIcon(icon)
+        self.selectAreaButton.setIconSize(QtCore.QSize(150, 150))
+        self.selectAreaButton.setToolButtonStyle(QtCore.Qt.ToolButtonTextUnderIcon)
+        self.selectAreaButton.setObjectName("selectAreaButton")
+        self.showBackgroundMapcheckBox = QtWidgets.QCheckBox(self.selectAreagroupBox)
+        self.showBackgroundMapcheckBox.setGeometry(QtCore.QRect(11, 24, 158, 17))
+        self.showBackgroundMapcheckBox.setObjectName("showBackgroundMapcheckBox")
+        self.showBackgroundMapcheckBox.raise_()
+        self.selectAreaButton.raise_()
         self.Tab.addTab(self.areaSelectionTab, "")
         self.modulesTab = QtWidgets.QWidget()
         self.modulesTab.setObjectName("modulesTab")
@@ -556,7 +556,7 @@ class Ui_SphyPreProcessDialog(object):
         self.horizontalLayout_7.addWidget(self.saveAsButton)
 
         self.retranslateUi(SphyPreProcessDialog)
-        self.Tab.setCurrentIndex(2)
+        self.Tab.setCurrentIndex(0)
         self.newButton.clicked.connect(SphyPreProcessDialog.createNewProject) # type: ignore
         self.openButton.clicked.connect(SphyPreProcessDialog.openProject) # type: ignore
         self.saveAsButton.clicked.connect(SphyPreProcessDialog.saveAsProject) # type: ignore
@@ -571,10 +571,25 @@ class Ui_SphyPreProcessDialog(object):
         self.selectAreaButton.clicked.connect(SphyPreProcessDialog.selectArea) # type: ignore
         self.calculateAreaPropsButton.clicked.connect(SphyPreProcessDialog.recreateArea) # type: ignore
         self.createModelCloneButton.clicked.connect(SphyPreProcessDialog.createClone) # type: ignore
-        #self.glacierModCheckBox.stateChanged['int'].connect(SphyPreProcessDialog.updateModules) # type: ignore
-        #self.snowModCheckBox.stateChanged['int'].connect(SphyPreProcessDialog.updateModules) # type: ignore
-        #self.groundwaterModCheckBox.stateChanged['int'].connect(SphyPreProcessDialog.updateModules) # type: ignore
-        #self.routingModCheckBox.stateChanged['int'].connect(SphyPreProcessDialog.updateModules) # type: ignore
+        self.glacierModCheckBox.stateChanged['int'].connect(SphyPreProcessDialog.updateModules) # type: ignore
+        self.snowModCheckBox.stateChanged['int'].connect(SphyPreProcessDialog.updateModules) # type: ignore
+        self.groundwaterModCheckBox.stateChanged['int'].connect(SphyPreProcessDialog.updateModules) # type: ignore
+        self.routingModCheckBox.stateChanged['int'].connect(SphyPreProcessDialog.updateModules) # type: ignore
+        self.selectOutletsButton.clicked.connect(SphyPreProcessDialog.updateDelineation) # type: ignore
+        self.clipMaskCheckBox.stateChanged['int'].connect(SphyPreProcessDialog.updateDelineation) # type: ignore
+        self.createSubBasinCheckBox.stateChanged['int'].connect(SphyPreProcessDialog.updateDelineation) # type: ignore
+        self.delineateButton.clicked.connect(SphyPreProcessDialog.delineate) # type: ignore
+        self.createInitialMapsToolButton.clicked.connect(SphyPreProcessDialog.createInitMaps) # type: ignore
+        self.selectStationsButton.clicked.connect(SphyPreProcessDialog.updateStations) # type: ignore
+        self.stationsButton.clicked.connect(SphyPreProcessDialog.createStations) # type: ignore
+        self.precFlagCheckBox.stateChanged['int'].connect(SphyPreProcessDialog.updateForcing) # type: ignore
+        self.tempFlagCheckBox.clicked.connect(SphyPreProcessDialog.updateForcing) # type: ignore
+        self.tempDBRadioButton.toggled['bool'].connect(SphyPreProcessDialog.updateForcing) # type: ignore
+        self.precLocToolButton.clicked.connect(SphyPreProcessDialog.updateForcing) # type: ignore
+        self.tempLocToolButton.clicked.connect(SphyPreProcessDialog.updateForcing) # type: ignore
+        self.precDataToolButton.clicked.connect(SphyPreProcessDialog.updateForcing) # type: ignore
+        self.tempDataToolButton.clicked.connect(SphyPreProcessDialog.updateForcing) # type: ignore
+        self.forcingToolButton.clicked.connect(SphyPreProcessDialog.createForcing) # type: ignore
         QtCore.QMetaObject.connectSlotsByName(SphyPreProcessDialog)
 
     def retranslateUi(self, SphyPreProcessDialog):
@@ -598,9 +613,6 @@ class Ui_SphyPreProcessDialog(object):
         self.utmInfoLineEdit.setPlainText(_translate("SphyPreProcessDialog", "Select the UTM WGS84 coordinate system for your area. Click the show UTM map\n"
 "button to identify the corresponding UTM zone for your model area."))
         self.Tab.setTabText(self.Tab.indexOf(self.generalTab), _translate("SphyPreProcessDialog", "General settings"))
-        self.selectAreagroupBox.setTitle(_translate("SphyPreProcessDialog", "Select area"))
-        self.selectAreaButton.setText(_translate("SphyPreProcessDialog", "Click to select area"))
-        self.showBackgroundMapcheckBox.setText(_translate("SphyPreProcessDialog", "Show background layers"))
         self.areaPropertiesGroupBox.setTitle(_translate("SphyPreProcessDialog", "Area properties"))
         self.areaSizeLabel.setText(_translate("SphyPreProcessDialog", "Area size [km2]"))
         self.xminLabel.setText(_translate("SphyPreProcessDialog", "xmin"))
@@ -614,6 +626,9 @@ class Ui_SphyPreProcessDialog(object):
         self.calculateAreaPropsButton.setText(_translate("SphyPreProcessDialog", "Re-calculate area properties"))
         self.selectedAreaMapLabel.setText(_translate("SphyPreProcessDialog", "Selected area"))
         self.createModelCloneButton.setText(_translate("SphyPreProcessDialog", "Create model clone"))
+        self.selectAreagroupBox.setTitle(_translate("SphyPreProcessDialog", "Select area"))
+        self.selectAreaButton.setText(_translate("SphyPreProcessDialog", "Click to select area"))
+        self.showBackgroundMapcheckBox.setText(_translate("SphyPreProcessDialog", "Show background layers"))
         self.Tab.setTabText(self.Tab.indexOf(self.areaSelectionTab), _translate("SphyPreProcessDialog", "Area selection"))
         self.modulesGroupBox.setTitle(_translate("SphyPreProcessDialog", "Modules to process"))
         self.glacierModCheckBox.setText(_translate("SphyPreProcessDialog", "Glaciers"))

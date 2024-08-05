@@ -59,12 +59,8 @@ from SphyPreProcess_af.gui.generated.SPHY_preprocess_dialog_base import Ui_SphyP
 
 #-Import spatial processing class with gdal commands
 from .spatial_processing import SpatialProcessing
-#-Import worker class for running subprocesses in a thread
-from .worker import SubProcessWorker
 #-Import forcing processing 
 from .forcing import processForcing
-from win32con import WAIT_IO_COMPLETION
-#import shutil
 
 #-Class that allows to drag a rectangle on the map canvas
 class RectangleMapTool(QgsMapToolEmitPoint):
@@ -136,10 +132,6 @@ class SphyPreProcessDialog(QtWidgets.QDialog, Ui_SphyPreProcessDialog):
         """Constructor."""
         super(SphyPreProcessDialog, self).__init__(parent)
         # Set up the user interface from Designer.
-        # After setupUI you can access any designer object by doing
-        # self.<objectname>, and you can use autoconnect slots - see
-        # http://qt-project.org/doc/qt-4.8/designer-using-a-ui-file.html
-        # #widgets-and-dialogs-with-auto-connect
         self.setupUi(self)
         #-Define the path where the plugins are installed
         self.pluginPath = os.path.dirname(__file__) + '/'
@@ -183,35 +175,9 @@ class SphyPreProcessDialog(QtWidgets.QDialog, Ui_SphyPreProcessDialog):
         except:
             self.userCRS = self.mapCrs
         
-        """ Modules Tab """
-        self.glacierModCheckBox.stateChanged.connect(self.updateModules)
-        self.routingModCheckBox.stateChanged.connect(self.updateModules)
-        self.snowModCheckBox.stateChanged.connect(self.updateModules)
-        self.groundwaterModCheckBox.stateChanged.connect(self.updateModules)
-        self.createInitialMapsToolButton.clicked.connect(self.createInitMaps)
-        
         """ Basin delineation Tab """
-        self.selectOutletsButton.clicked.connect(self.updateDelineation)
-        self.clipMaskCheckBox.stateChanged.connect(self.updateDelineation)
-        self.createSubBasinCheckBox.stateChanged.connect(self.updateDelineation)
-        self.delineateButton.clicked.connect(self.delineate)
         self.delineateButton.setEnabled(1)
-        
-        """ Stations Tab """
-        self.selectStationsButton.clicked.connect(self.updateStations)
-        self.stationsButton.clicked.connect(self.createStations)
-        
-        """ Meteorological forcing Tab """
-        self.precFlagCheckBox.stateChanged.connect(self.updateForcing)
-        self.tempFlagCheckBox.stateChanged.connect(self.updateForcing)
-        self.precDBRadioButton.toggled.connect(self.updateForcing)
-        self.tempDBRadioButton.toggled.connect(self.updateForcing)
-        self.precLocToolButton.clicked.connect(self.updateForcing)
-        self.tempLocToolButton.clicked.connect(self.updateForcing)
-        self.precDataToolButton.clicked.connect(self.updateForcing)
-        self.tempDataToolButton.clicked.connect(self.updateForcing)
-        self.forcingToolButton.clicked.connect(self.createForcing)
-        
+                
         #-clear the process log text widget
         self.processLog1TextEdit.clear()
         self.processLog2TextEdit.clear()
@@ -244,7 +210,6 @@ class SphyPreProcessDialog(QtWidgets.QDialog, Ui_SphyPreProcessDialog):
         #-glacier and routing maps are only created if these modules are turned on. Snow and groundwater modules don't require the creation of maps, but are implemented for possible
         # future developments. The Gui doesn't do anything with these two modules yet.
         self.glacierMaps = {'Glaciers Table': 'glaciers.csv'} #╔{'GlacFrac': 'glacfrac.map', 'GlacFracCI': 'glac_cleanice.map', 'GlacFracDB': 'glac_debris.map'}
-        #self.routingMaps = {'LDD': 'ldd.map', 'Outlets': 'outlet.map', 'Rivers': 'river.map', 'AccuFlux': 'accuflux.map', 'Sub-basins': 'subbasins.map'}
         self.routingMaps = {'LDD': 'ldd.map', 'Outlets': 'outlets.map', 'Rivers': 'river.map', 'AccuFlux': 'accuflux.map', 'Sub-basins': 'subbasins.map'}
         self.setModulesDict()
         #-Dictionary for the Meteorological forcing Tab
@@ -483,7 +448,6 @@ class SphyPreProcessDialog(QtWidgets.QDialog, Ui_SphyPreProcessDialog):
             fill_style.setBrushStyle(QtCore.Qt.NoBrush)
             countries.renderer().symbol().changeSymbolLayer(0, fill_style)
             iface.mapCanvas().refresh()
-            #iface.legendInterface().refreshLayerSymbology(countries) old QGIS2
             iface.layerTreeView().refreshLayerSymbology(countries.id())
 
     #-Function to select a rectangle on the map for the area of interest.
@@ -873,7 +837,6 @@ class SphyPreProcessDialog(QtWidgets.QDialog, Ui_SphyPreProcessDialog):
                             'modid_int_glacid':'TEMPORARY_OUTPUT','u_id':'TEMPORARY_OUTPUT','modid_int_glacid_inclmodh':'TEMPORARY_OUTPUT',
                             'intersection_glaciers_uid_hglac':'TEMPORARY_OUTPUT','debris_geom':'TEMPORARY_OUTPUT'})
             print('Glaciers Module done')
-
        
         self.initialMapsProgressBar.setValue(100)
         time.sleep(1)
@@ -935,44 +898,37 @@ class SphyPreProcessDialog(QtWidgets.QDialog, Ui_SphyPreProcessDialog):
             self.deleteLayer(os.path.join(self.resultsPath, 'basin.map'), 'raster')
             #####-First convert outlet(s) shapefile to GeoTiff
             extent = str(self.xMin) + ',' + str(self.xMax) + ',' + str(self.yMin) + ',' + str(self.yMax)
+            extent_mod = str(self.xMin) + ',' + str(self.yMin) + ',' + str(self.xMax) + ',' + str(self.yMax)
             outfile = os.path.join(self.resultsPath, 'temp.tif')
             self.processLog2TextEdit.append('Converting Outlet(s) to raster...')
-            #processing.run("grass:v.to.rast.attribute", {self.outletsShp, 0, "id", extent, self.spatialRes, -1.0, 0.0001, outfile})
-            processing.run("grass7:v.to.rast", {'input':self.outletsShp,'type':0,'where':'','use':0,'attribute_column':'id','GRASS_REGION_PARAMETER':extent,
-                                                          'GRASS_REGION_CELLSIZE_PARAMETER': self.spatialRes, 'GRASS_SNAP_TOLERANCE_PARAMETER': -1.0,
-                                                          'GRASS_MIN_AREA_PARAMETER': 0.0001,'output':outfile})            
-            
+
+            # Rasterize outlets.shp
+            command = 'gdal_rasterize -l outlets ' + ' -a id -tr ' + str(self.spatialRes) + ' ' + str(self.spatialRes) + ' -te ' + extent_mod.replace(',', ' ') + ' -ot Float32 -of GTiff ' + '-a_nodata 9999.0 ' + self.outletsShp + ' ' + outfile
+            #-Execute the command(s) 
+            self.runCommands([command])
+
             #####-Translate GeoTiff to PCRaster map
             infile = outfile
             outfile = os.path.join(self.resultsPath, 'temp.map')
             #-Create a class with the gdal methods
             m = SpatialProcessing(infile, outfile, None, None, None, extra='-of PCRaster -ot Float32')
-            #-Execute the command(s) in a thread            
-            self.threadWorker(SubProcessWorker([m.rasterTranslate()], self.processLog2TextEdit, 'temp', outfile, False, 'raster'))
-            # while self.thread.isRunning(): #-wait till the thread is finished before continue
-            #     # fix_print_with_import
-            #     print('')
+            self.runCommands([m.rasterTranslate()])
+
             #-Convert to nominal PCRaster map
             infile = outfile 
             command = self.pcrasterModelFile('"' + os.path.join(self.resultsPath, self.routingMaps['Outlets']) + '"'\
                 + ' = nominal("' + infile + '")')
-            #-Execute the command(s) in a thread
-            self.threadWorker(SubProcessWorker(['pcrcalc -f ' + command], self.processLog2TextEdit, 'Outlets', self.routingMaps['Outlets'], False, 'raster'))
-            # while self.thread.isRunning(): #-wait till the thread is finished before continue
-            #     # fix_print_with_import
-            #     print('')
-            #-update progressbar
+            #-Execute the command(s) 
+            self.runCommands(['pcrcalc -f ' + command])
+
             mm += 1
             self.delineateProgressBar.setValue(int(mm/maps*100))
             self.processLog2TextEdit.append('Delineating basin...')
             #-Delineate the basin based on the ldd and the defined outlets
             command = self.pcrasterModelFile('"' + os.path.join(self.resultsPath, 'basin.map') + '"'\
                 + ' = catchment("' + os.path.join(self.resultsPath, self.routingMaps['LDD']) + '","' + os.path.join(self.resultsPath, self.routingMaps['Outlets']) + '")')
-            #-Execute the command(s) in a thread
-            self.threadWorker(SubProcessWorker(['pcrcalc -f ' + command], self.processLog2TextEdit, 'Basin', 'basin.map', False, 'raster'))
-            # while self.thread.isRunning(): #-wait till the thread is finished before continue
-            #     # fix_print_with_import
-            #     print('')
+            #-Execute the command(s) 
+            self.runCommands(['pcrcalc -f ' + command])
             #-update progressbar
             mm += 1
             self.delineateProgressBar.setValue(int(mm/maps*100))
@@ -981,28 +937,21 @@ class SphyPreProcessDialog(QtWidgets.QDialog, Ui_SphyPreProcessDialog):
                 self.processLog2TextEdit.append('Creating sub-basins...')
                 command = self.pcrasterModelFile('"' + os.path.join(self.resultsPath, self.routingMaps['Sub-basins']) + '"'\
                     + ' = subcatchment("' + os.path.join(self.resultsPath, self.routingMaps['LDD']) + '","' + os.path.join(self.resultsPath, self.routingMaps['Outlets']) + '")')
-                #-Execute the command(s) in a thread
-                self.threadWorker(SubProcessWorker(['pcrcalc -f ' + command], self.processLog2TextEdit, 'Sub-basins', self.routingMaps['Sub-basins'], False, 'raster'))
-                # while self.thread.isRunning(): #-wait till the thread is finished before continue
-                #     # fix_print_with_import
-                #     print('')
+                #-Execute the command(s) 
+                self.runCommands(['pcrcalc -f ' + command])
                 #-update progressbar
                 mm += 1
                 self.delineateProgressBar.setValue(int(mm/maps*100))
                     
-            #-Clip all the maps to the basin outline 
+            #----------------------------- Clip all the maps to the basin outline  ------------------------------------------------------------
             if self.currentConfig.getint('DELINEATION', 'clip') == 1:
                 self.processLog2TextEdit.append('Clipping maps to basin outline...')
                 
                 #-re-create the clone, based on the delineated basin map
                 command = self.pcrasterModelFile('"' + os.path.join(self.resultsPath, 'clone.map') + '"'\
                     + ' = boolean("' + os.path.join(self.resultsPath, 'basin.map') +  '")')
-                #-Execute the command(s) in a thread
-                self.threadWorker(SubProcessWorker(['pcrcalc -f ' + command], self.processLog2TextEdit, 'Clone', 'clone.map', False, 'raster'))
-                # while self.thread.isRunning(): #-wait till the thread is finished before continue
-                #     # fix_print_with_import
-                #     print('')
-                #-update progressbar
+                #-Execute the command(s) 
+                self.runCommands(['pcrcalc -f ' + command])
                 mm += 1
                 self.delineateProgressBar.setValue(int(mm/maps*100))
                 #-delete old general raster layers from canvas and clip general maps to basin outline and add to canvas
@@ -1010,11 +959,8 @@ class SphyPreProcessDialog(QtWidgets.QDialog, Ui_SphyPreProcessDialog):
                     self.deleteLayer(os.path.join(self.resultsPath, self.generalMaps[k]), 'raster', remLayerDisk=False)
                     command = self.pcrasterModelFile('"' + os.path.join(self.resultsPath, self.generalMaps[k]) + '"'\
                         + ' = if("' + os.path.join(self.resultsPath, 'clone.map') + '","' + os.path.join(self.resultsPath, self.generalMaps[k]) +  '")')
-                    #-Execute the command(s) in a thread
-                    self.threadWorker(SubProcessWorker(['pcrcalc -f ' + command], self.processLog2TextEdit, k, self.generalMaps[k], True, 'raster'))
-                    # while self.thread.isRunning(): #-wait till the thread is finished before continue
-                    #     # fix_print_with_import
-                    #     print('')
+                    #-Execute the command(s) 
+                    self.runCommands(['pcrcalc -f ' + command])
                     #-update progressbar
                     mm += 1
                     self.delineateProgressBar.setValue(int(mm/maps*100))
@@ -1025,11 +971,8 @@ class SphyPreProcessDialog(QtWidgets.QDialog, Ui_SphyPreProcessDialog):
                         self.deleteLayer(os.path.join(self.resultsPath, self.glacierMaps[k]), 'raster', remLayerDisk=False)
                         command = self.pcrasterModelFile('"' + os.path.join(self.resultsPath, self.glacierMaps[k]) + '"'\
                             + ' = if("' + os.path.join(self.resultsPath, 'clone.map') + '","' + os.path.join(self.resultsPath, self.glacierMaps[k]) +  '")')
-                        #-Execute the command(s) in a thread
-                        self.threadWorker(SubProcessWorker(['pcrcalc -f ' + command], self.processLog2TextEdit, k, self.glacierMaps[k], True, 'raster'))
-                        # while self.thread.isRunning(): #-wait till the thread is finished before continue
-                        #     # fix_print_with_import
-                        #     print('')
+                        #-Execute the command(s) 
+                        self.runCommands(['pcrcalc -f ' + command])
                         #-update progressbar
                         mm += 1
                         self.delineateProgressBar.setValue(int(mm/maps*100))
@@ -1037,11 +980,8 @@ class SphyPreProcessDialog(QtWidgets.QDialog, Ui_SphyPreProcessDialog):
                 for k in self.routingMaps:
                     command = self.pcrasterModelFile('"' + os.path.join(self.resultsPath, self.routingMaps[k]) + '"'\
                         + ' = if("' + os.path.join(self.resultsPath, 'clone.map') + '","' + os.path.join(self.resultsPath, self.routingMaps[k]) +  '")')
-                    #-Execute the command(s) in a thread
-                    self.threadWorker(SubProcessWorker(['pcrcalc -f ' + command], self.processLog2TextEdit, k, self.routingMaps[k], True, 'raster'))
-                    # while self.thread.isRunning(): #-wait till the thread is finished before continue
-                    #     # fix_print_with_import
-                    #     print('')
+                    #-Execute the command(s) 
+                    self.runCommands(['pcrcalc -f ' + command])
                     #-update progressbar
                     mm += 1
                     self.delineateProgressBar.setValue(int(mm/maps*100))    
@@ -1050,20 +990,14 @@ class SphyPreProcessDialog(QtWidgets.QDialog, Ui_SphyPreProcessDialog):
                 self.deleteLayer(os.path.join(self.resultsPath, self.routingMaps['LDD']), 'raster', remLayerDisk=False)
                 command = self.pcrasterModelFile('"' + os.path.join(self.resultsPath, self.routingMaps['LDD']) + '"'\
                             + ' = lddrepair(' + '"' + os.path.join(self.resultsPath, self.routingMaps['LDD']) + '"' + ')')
-                #-Execute the command(s) in a thread
-                self.threadWorker(SubProcessWorker(['pcrcalc -f ' + command], self.processLog2TextEdit, 'LDD', self.routingMaps['LDD'], True, 'raster'))
-                # while self.thread.isRunning(): #-wait till the thread is finished before continue
-                #     # fix_print_with_import
-                #     print('')
+                #-Execute the command(s) 
+                self.runCommands(['pcrcalc -f ' + command])
                 
                 #-Clip basin map to outline
                 command = self.pcrasterModelFile('"' + os.path.join(self.resultsPath, 'basin.map') + '"'\
                     + ' = if("' + os.path.join(self.resultsPath, 'clone.map') + '","' + os.path.join(self.resultsPath, 'basin.map') +  '")')
-                #-Execute the command(s) in a thread
-                self.threadWorker(SubProcessWorker(['pcrcalc -f ' + command], self.processLog2TextEdit, 'Basin', 'basin.map', True, 'raster'))
-                # while self.thread.isRunning(): #-wait till the thread is finished before continue
-                #     # fix_print_with_import
-                #     print('')
+                #-Execute the command(s) 
+                self.runCommands(['pcrcalc -f ' + command])
                 #-update progressbar
                 mm += 1
                 self.delineateProgressBar.setValue(int(mm/maps*100))
@@ -1090,7 +1024,11 @@ class SphyPreProcessDialog(QtWidgets.QDialog, Ui_SphyPreProcessDialog):
         fi = glob.glob(os.path.join(self.resultsPath, 'temp*'))
         for f in fi:
             os.remove(f)
-    
+        #-remove AUX FILES
+        fi = glob.glob(os.path.join(self.resultsPath, '*.aux.xml'))
+        for f in fi:
+            os.remove(f)
+
     #-Function to update the station settings
     def updateStations(self):
         stations = QtWidgets.QFileDialog.getOpenFileName(self, "Select the station(s) shapefile", self.resultsPath, "stations.shp")[0]
@@ -1111,37 +1049,39 @@ class SphyPreProcessDialog(QtWidgets.QDialog, Ui_SphyPreProcessDialog):
             self.deleteLayer(os.path.join(self.resultsPath, 'stations.map'), 'raster')
             #####-First convert station(s) shapefile to GeoTiff
             extent = str(self.xMin) + ',' + str(self.xMax) + ',' + str(self.yMin) + ',' + str(self.yMax)
+            extent_mod = str(self.xMin) + ',' + str(self.yMin) + ',' + str(self.xMax) + ',' + str(self.yMax)
+
             outfile = os.path.join(self.resultsPath, 'temp.tif')
             self.processLog3TextEdit.append('Converting Station(s) to raster...')
-            processing.run("grass7:v.to.rast", {'input':self.stationsShp,'type':0,'where':'','use':0,'attribute_column':'id','GRASS_REGION_PARAMETER':extent,
-                                                          'GRASS_REGION_CELLSIZE_PARAMETER': self.spatialRes, 'GRASS_SNAP_TOLERANCE_PARAMETER': -1.0,
-                                                          'GRASS_MIN_AREA_PARAMETER': 0.0001,'output':outfile})
+            # Rasterize stations.shp
+            command = 'gdal_rasterize -l stations ' + ' -a id -tr ' + str(self.spatialRes) + ' ' + str(self.spatialRes) + ' -te ' + extent_mod.replace(',', ' ') + ' -ot Float32 -of GTiff ' + '-a_nodata 9999.0 ' + self.stationsShp + ' ' + outfile
+            #-Execute the command(s) 
+            self.runCommands([command])
+
             #####-Translate GeoTiff to PCRaster map
             infile = outfile
             outfile = os.path.join(self.resultsPath, 'temp.map')
             #-Create a class with the gdal methods
             m = SpatialProcessing(infile, outfile, None, None, None, extra='-of PCRaster -ot Float32')
-            #-Execute the command(s) in a thread            
-            self.threadWorker(SubProcessWorker([m.rasterTranslate()], self.processLog3TextEdit, 'temp', outfile, False, 'raster'))
-            # while self.thread.isRunning(): #-wait till the thread is finished before continue
-            #     # fix_print_with_import
-            #     print('')
+            self.runCommands([m.rasterTranslate()])
+
             #-Convert to nominal PCRaster map
             infile = outfile 
             command = self.pcrasterModelFile('"' + os.path.join(self.resultsPath, 'stations.map') + '"'\
                 + ' = nominal("' + infile + '")')
-            #-Execute the command(s) in a thread
-            self.threadWorker(SubProcessWorker(['pcrcalc -f ' + command], self.processLog3TextEdit, 'Stations', 'stations.map', True, 'raster'))
-            # while self.thread.isRunning(): #-wait till the thread is finished before continue
-            #     # fix_print_with_import
-            #     print('')
-                
+            #-Execute the command(s) 
+            self.runCommands(['pcrcalc -f ' + command])                
                 
             self.processLog3TextEdit.append('Station creation finished.')
         else:
             self.processLog3TextEdit.append('Error: missing stations.shp in output folder.')
         #-remove temporary tiffs from results dir
         fi = glob.glob(os.path.join(self.resultsPath, 'temp*'))
+        for f in fi:
+            os.remove(f)
+
+        #-remove AUX FILES
+        fi = glob.glob(os.path.join(self.resultsPath, '*.aux.xml'))
         for f in fi:
             os.remove(f)
     
@@ -1222,8 +1162,6 @@ class SphyPreProcessDialog(QtWidgets.QDialog, Ui_SphyPreProcessDialog):
         
 
     def runCommands(self,commands):
-        # if len(commands)==1:
-        #     commands=[commands]
         for command in commands:
             result = subprocess.run(
                 command,
