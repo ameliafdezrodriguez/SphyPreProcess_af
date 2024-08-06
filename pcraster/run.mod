@@ -1,1 +1,1 @@
-"E:/amelia/SPHY_demo/SPHY-3.0-test/input2/stations.map" = nominal("E:/amelia/SPHY_demo/SPHY-3.0-test/input2/temp.map")
+"E:/amelia/SPHY_demo/new_area/forcing/prec0000.031" = if("E:/amelia/SPHY_demo/new_area/clone.map", 3600 * 24 * "E:/amelia/SPHY_demo/new_area/temp.map")

@@ -50,7 +50,8 @@ __date__ ='1 January 2017'
 
 import os, subprocess, configparser, sqlite3, datetime, math, glob, time, processing
 
-from qgis.PyQt import QtGui, QtCore, QtWidgets #uic
+from qgis.PyQt import QtGui, QtCore, QtWidgets
+from PyQt5.QtCore import Qt, pyqtSignal
 from qgis.core import *
 from qgis.utils import iface, plugins
 from qgis.gui import QgsMessageBar, QgsMapToolEmitPoint, QgsRubberBand 
@@ -64,10 +65,15 @@ from .forcing import processForcing
 
 #-Class that allows to drag a rectangle on the map canvas
 class RectangleMapTool(QgsMapToolEmitPoint):
+
+    # This signal is emitted when the rectangle drawing is completed, passing the drawn rectangle as an argument.
+    deactivated = pyqtSignal()
+    finished = QtCore.pyqtSignal(object)
+
     def __init__(self, canvas):
         self.canvas = canvas
         QgsMapToolEmitPoint.__init__(self, self.canvas)
-        self.rubberBand = QgsRubberBand(self.canvas, QgsWkbTypes.PolygonGeometry)
+        self.rubberBand = QgsRubberBand(self.canvas, QgsWkbTypes.PolygonGeometry) # A class for drawing transient features
         clr = QtGui.QColor('red')
         clr.setAlpha(50)
         self.rubberBand.setFillColor(clr)
@@ -79,12 +85,14 @@ class RectangleMapTool(QgsMapToolEmitPoint):
         self.isEmittingPoint = False
         self.rubberBand.reset(QgsWkbTypes.PolygonGeometry)
     
+    # the event when the mouse button is pressed
     def canvasPressEvent(self, e):
         self.startPoint = self.toMapCoordinates(e.pos())
         self.endPoint = self.startPoint
         self.isEmittingPoint = True
         self.showRect(self.startPoint, self.endPoint)
     
+    # handles the event when the mouse button is released
     def canvasReleaseEvent(self, e):
         self.isEmittingPoint = False
         r = self.rectangle()
@@ -92,12 +100,14 @@ class RectangleMapTool(QgsMapToolEmitPoint):
             self.rubberBand.reset()
             self.finished.emit(r)
     
+    # It updates the end point and redraws the rectangle.
     def canvasMoveEvent(self, e):
         if not self.isEmittingPoint:
             return
         self.endPoint = self.toMapCoordinates(e.pos())
         self.showRect(self.startPoint, self.endPoint)
     
+    #  Draws the rectangle on the canvas by adding points to the rubberBand.
     def showRect(self, startPoint, endPoint):
         self.rubberBand.reset(QgsWkbTypes.PolygonGeometry)
         if startPoint.x() == endPoint.x() or startPoint.y() == endPoint.y():
@@ -113,6 +123,7 @@ class RectangleMapTool(QgsMapToolEmitPoint):
         self.rubberBand.addPoint(point4, True)    # true to update canvas
         self.rubberBand.show()
     
+    # Returns the QgsRectangle object representing the drawn rectangle, or None if the rectangle is not properly defined.
     def rectangle(self):
         if self.startPoint is None or self.endPoint is None:
             return None
@@ -120,11 +131,10 @@ class RectangleMapTool(QgsMapToolEmitPoint):
             return None
         return QgsRectangle(self.startPoint, self.endPoint)
     
+    # Deactivates the tool and emits a deactivated signal.
     def deactivate(self):
         super(RectangleMapTool, self).deactivate()
-        self.emit(QtCore.SIGNAL("deactivated()"))
-    
-    finished = QtCore.pyqtSignal(object)
+        self.deactivated.emit()
 
 #-Preprocessor
 class SphyPreProcessDialog(QtWidgets.QDialog, Ui_SphyPreProcessDialog):
@@ -514,7 +524,7 @@ class SphyPreProcessDialog(QtWidgets.QDialog, Ui_SphyPreProcessDialog):
     #-Add selected polygon area to canvas
     def addSelectedArea(self):
         fill_style = QgsSimpleFillSymbolLayer()
-        clr = QtGui.QColor('red')
+        clr = QtGui.QColor('blue')
         clr.setAlpha(50)
         fill_style.setColor(clr)
         wb = QgsVectorLayer(self.selectedAreaShp, 'Selected area', 'ogr')
@@ -524,7 +534,6 @@ class SphyPreProcessDialog(QtWidgets.QDialog, Ui_SphyPreProcessDialog):
         root = QgsProject.instance().layerTreeRoot()
         root.insertLayer(0, wb)
         iface.mapCanvas().refresh()
-        #iface.legendInterface().refreshLayerSymbology(wb) old QGIS2
         iface.layerTreeView().refreshLayerSymbology(wb.id())
         
     #-Function to calculate selected area properties
@@ -667,6 +676,7 @@ class SphyPreProcessDialog(QtWidgets.QDialog, Ui_SphyPreProcessDialog):
         #-Execute the command(s) 
         self.runCommands(commands)
         self.processLog1TextEdit.append('DEM is created')
+        self.addCanvasLayer(os.path.join(self.resultsPath, 'dem.map'), 'DEM', 'raster')
         #-set progress bar value
         mm+=1
         self.initialMapsProgressBar.setValue(int(mm/maps*100))
@@ -676,7 +686,9 @@ class SphyPreProcessDialog(QtWidgets.QDialog, Ui_SphyPreProcessDialog):
                                         + ' = slope(' + '"' + os.path.join(self.resultsPath, self.generalMaps['DEM']) + '"' + ')')
         #-Execute the command(s) 
         self.runCommands(['pcrcalc -f ' + command])
-        self.processLog1TextEdit.append('Slope is created')
+        self.processLog1TextEdit.append('SLOPE is created')
+        self.addCanvasLayer(os.path.join(self.resultsPath, 'slope.map'), 'Slope', 'raster')
+
         fi = glob.glob(os.path.join(self.resultsPath, 'temp.*'))
         for f in fi:
             os.remove(f)
@@ -702,6 +714,7 @@ class SphyPreProcessDialog(QtWidgets.QDialog, Ui_SphyPreProcessDialog):
         #-Execute the command(s) 
         self.runCommands(commands)
         self.processLog1TextEdit.append('LATITUDE is created')
+        self.addCanvasLayer(os.path.join(self.resultsPath, 'latitude.map'), 'Latitude', 'raster')
         fi = glob.glob(os.path.join(self.resultsPath, 'temp.*'))
         for f in fi:
             os.remove(f)
@@ -727,6 +740,8 @@ class SphyPreProcessDialog(QtWidgets.QDialog, Ui_SphyPreProcessDialog):
         #-Execute the command(s) 
         self.runCommands(commands)
         self.processLog1TextEdit.append('LANDUSE is created')
+        self.addCanvasLayer(os.path.join(self.resultsPath, 'landuse.map'), 'Landuse', 'raster')
+
         #-remove temporary tiffs from results dir
         fi = glob.glob(os.path.join(self.resultsPath, 'temp.*'))
         for f in fi:
@@ -756,7 +771,9 @@ class SphyPreProcessDialog(QtWidgets.QDialog, Ui_SphyPreProcessDialog):
             commands.append(m.rasterTranslate())
             #-Execute the command(s) 
             self.runCommands(commands)
-            self.processLog1TextEdit.append(smap + ' is created')
+            self.processLog1TextEdit.append(smap.upper() + ' is created')
+            self.addCanvasLayer(os.path.join(self.resultsPath, smap + '.map'), smap, 'raster')
+
                 #-remove temporary tiffs from results dir
             fi = glob.glob(os.path.join(self.resultsPath, 'temp.*'))
             for f in fi:
@@ -1177,56 +1194,6 @@ class SphyPreProcessDialog(QtWidgets.QDialog, Ui_SphyPreProcessDialog):
         else:
             print([f"Command '{command}' completed successfully"])
         
-    #-Start the worker in a thread
-    def threadWorker(self, worker):
-        # start the worker in a new thread
-        thread = QtCore.QThread(self)
-        worker.moveToThread(thread)
-        # listeners        
-        worker.finished.connect(self.workerFinished)
-        worker.error.connect(self.workerError)
-        worker.cmdProgress.connect(self.workerListener)
-        thread.started.connect(worker.run)
-        thread.start()
-        thread.wait()
-        self.thread = thread
-        self.worker = worker
-     
-    def workerFinished(self, result):
-
-        print(f"Result: {result}")
-        # clean up the worker and thread
-        self.thread.quit()
-        self.thread.wait()
-        # check the process
-        process = result[0]
-        # map name
-        mapName = result[1]
-        # file name
-        fileName = result[2]
-        # check if map has to be added to canvas
-        addMap = result[3]
-        # check file type
-        fType = result[4]
-        # textlog
-        textLog = result[5]
-        if process is None and mapName:
-            textLog.append(mapName + ' map was not created.')
-        elif process and mapName:
-            textLog.append(mapName + ' was created succesfully.')
-            if addMap: #-check if map has to be added to canvas
-                self.addCanvasLayer(os.path.join(self.resultsPath, fileName), mapName, fType)
- 
-    # function that is launched whenever the model is unable to run            
-    def workerError(self, e, exception_string):
-        QgsMessageLog.logMessage('Worker thread raised an exception:\n'.format(exception_string), level=QgsMessageLog.CRITICAL)
-         
-    # function that parses cmd line output to the text widget    
-    def workerListener(self, result):
-        line = result[0]
-        textLog = result[1]
-        textLog.append(line)
-
     #-Function that creates a pcraster model file (*.mod)
     def pcrasterModelFile(self, command):
         #-Create a batch file
@@ -1372,13 +1339,13 @@ class SphyPreProcessDialog(QtWidgets.QDialog, Ui_SphyPreProcessDialog):
             elif c==classes:
                 color = hcolor
                 rastervalue = maxvalue
-            lst.append(QgsColorRampShader.ColorRampItem(rastervalue, QtGui.QColor(color[0],color[1],color[2]),str(rastervalue)))
+            lst.append(QgsColorRampShader.ColorRampItem(rastervalue, QtGui.QColor(int(color[0]), int(color[1]), int(color[2])),str(rastervalue)))
 
         myRasterShader = QgsRasterShader()
-        myColorRamp = QgsColorRampShader()
+        myColorRamp = QgsColorRampShader(minimumValue = minvalue, maximumValue = maxvalue)
         
         myColorRamp.setColorRampItemList(lst)
-        myColorRamp.setColorRampType(QgsColorRampShader.INTERPOLATED)
+        myColorRamp.setColorRampType(QgsColorRampShader.Interpolated)
         myRasterShader.setRasterShaderFunction(myColorRamp)
         
         myPseudoRenderer = QgsSingleBandPseudoColorRenderer(layer.dataProvider(), 
