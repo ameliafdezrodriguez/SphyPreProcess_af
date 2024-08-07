@@ -59,9 +59,9 @@ from qgis.gui import QgsMessageBar, QgsMapToolEmitPoint, QgsRubberBand
 from SphyPreProcess_af.gui.generated.SPHY_preprocess_dialog_base import Ui_SphyPreProcessDialog
 
 #-Import spatial processing class with gdal commands
-from .spatial_processing import SpatialProcessing
+from SphyPreProcess_af.aux_scripts.spatial_processing import SpatialProcessing
 #-Import forcing processing 
-from .forcing import processForcing
+from SphyPreProcess_af.aux_scripts.forcing import processForcing
 
 #-Class that allows to drag a rectangle on the map canvas
 class RectangleMapTool(QgsMapToolEmitPoint):
@@ -434,7 +434,7 @@ class SphyPreProcessDialog(QtWidgets.QDialog, Ui_SphyPreProcessDialog):
        
     #-Function that shows a UTM jpg image to help the user identify which UTM zone to use    
     def showUTM(self):
-        subprocess.call(self.pluginPath + 'utm_zones.jpg', shell=True)
+        subprocess.call(self.pluginPath + 'images/utm_zones.jpg', shell=True)
     
     #-Add or remove background layer (from NaturalEarth)    
     def showBackground(self, state):
@@ -444,15 +444,31 @@ class SphyPreProcessDialog(QtWidgets.QDialog, Ui_SphyPreProcessDialog):
                 canvas = iface.mapCanvas()
                 allLayers = canvas.layers()
                 for i in allLayers:
-                    if i.name() == 'shaded relief' or i.name() == 'countries':
+                    if i.name() == 'OpenTopoMap' or i.name() == 'countries':
                         QgsProject.instance().removeMapLayer(i.id())
             except:
                 passs
         #-Show the background layers
         else:
-            raster = iface.addRasterLayer(self.pluginPath + 'NaturalEarthData/HYP_50M_SR_W/HYP_50M_SR_W.tif', 'shaded relief')
-            raster.setCrs(QgsCoordinateReferenceSystem(4326, QgsCoordinateReferenceSystem.EpsgCrsId))
-            countries = iface.addVectorLayer(self.pluginPath + 'NaturalEarthData/ne_10m_admin_0_countries.shp', 'countries', 'ogr')
+            #raster = iface.addRasterLayer(self.pluginPath + 'NaturalEarthData/HYP_50M_SR_W/HYP_50M_SR_W.tif', 'shaded relief')
+
+            # URL template for OpenTopoMap
+            url = "https://tile.opentopomap.org/{z}/{x}/{y}.png"
+
+            # Create the raster layer
+            layer_name = 'OpenTopoMap'
+            raster = QgsRasterLayer(f"type=xyz&url={url}", layer_name, "wms")
+
+            # Add the raster layer to the QGIS interface
+            if raster.isValid():
+                raster.setCrs(QgsCoordinateReferenceSystem(3857, QgsCoordinateReferenceSystem.EpsgCrsId))
+                QgsProject.instance().addMapLayer(raster)
+                raster.renderer().setOpacity(0.5)
+                print(f"{layer_name} layer added successfully")
+            else:
+                print(f"Failed to add {layer_name} layer")
+
+            countries = iface.addVectorLayer(self.pluginPath + 'images/ne_10m_admin_0_countries.shp', 'countries', 'ogr')
             countries.setCrs(QgsCoordinateReferenceSystem(4326, QgsCoordinateReferenceSystem.EpsgCrsId))
             fill_style = QgsSimpleFillSymbolLayer()
             fill_style.setBrushStyle(QtCore.Qt.NoBrush)
@@ -799,6 +815,8 @@ class SphyPreProcessDialog(QtWidgets.QDialog, Ui_SphyPreProcessDialog):
             #-Execute the command(s) 
             self.runCommands(['pcrcalc -f ' + command])
             self.processLog1TextEdit.append('LDD repaired is created')
+            self.addCanvasLayer(os.path.join(self.resultsPath, self.routingMaps['LDD']), 'LDD', 'raster')
+
             #-set progress bar value
             mm+=1
             self.initialMapsProgressBar.setValue(int(mm/maps*100))
@@ -808,6 +826,8 @@ class SphyPreProcessDialog(QtWidgets.QDialog, Ui_SphyPreProcessDialog):
             #-Execute the command(s) 
             self.runCommands(['pcrcalc -f ' + command])
             self.processLog1TextEdit.append('Accuflux is created')
+            self.addCanvasLayer(os.path.join(self.resultsPath, self.routingMaps['AccuFlux']), 'AccuFlux', 'raster')
+
             #-set progress bar value
             mm+=1
             self.initialMapsProgressBar.setValue(int(mm/maps*100))
@@ -817,6 +837,8 @@ class SphyPreProcessDialog(QtWidgets.QDialog, Ui_SphyPreProcessDialog):
             #-Execute the command(s) 
             self.runCommands(['pcrcalc -f ' + command])
             self.processLog1TextEdit.append('Rivers is created')
+            self.addCanvasLayer(os.path.join(self.resultsPath, self.routingMaps['Rivers']), 'Rivers', 'raster')
+
             mm+=1
             self.initialMapsProgressBar.setValue(int(mm/maps*100))
             ######## Outlets #########  is initially the pits in the ldd (later the user can specify outlets)
@@ -982,17 +1004,6 @@ class SphyPreProcessDialog(QtWidgets.QDialog, Ui_SphyPreProcessDialog):
                     mm += 1
                     self.delineateProgressBar.setValue(int(mm/maps*100))
                          
-                #-delete old glacier raster layers from canvas and clip glacier maps to basin outline and add to canvas
-                if self.glacier: 
-                    for k in self.glacierMaps:
-                        self.deleteLayer(os.path.join(self.resultsPath, self.glacierMaps[k]), 'raster', remLayerDisk=False)
-                        command = self.pcrasterModelFile('"' + os.path.join(self.resultsPath, self.glacierMaps[k]) + '"'\
-                            + ' = if("' + os.path.join(self.resultsPath, 'clone.map') + '","' + os.path.join(self.resultsPath, self.glacierMaps[k]) +  '")')
-                        #-Execute the command(s) 
-                        self.runCommands(['pcrcalc -f ' + command])
-                        #-update progressbar
-                        mm += 1
-                        self.delineateProgressBar.setValue(int(mm/maps*100))
                 #-delete old routing raster layers from canvas and clip routing maps to basin outline and add to canvas
                 for k in self.routingMaps:
                     command = self.pcrasterModelFile('"' + os.path.join(self.resultsPath, self.routingMaps[k]) + '"'\
@@ -1113,9 +1124,9 @@ class SphyPreProcessDialog(QtWidgets.QDialog, Ui_SphyPreProcessDialog):
             toolDict = {'LocToolButton': 'LocFile', 'DataToolButton': 'DataFile'}
             pars = var + toolDict[key]
             if key[0:3] == 'Loc':
-                f = QtWidgets.QFileDialog.getOpenFileName(self, "Select the location csv file", self.resultsPath, "*.csv")
+                f = QtWidgets.QFileDialog.getOpenFileName(self, "Select the location csv file", self.resultsPath, "*.csv")[0]
             else:
-                f = QtWidgets.QFileDialog.getOpenFileName(self, "Select the data csv file", self.resultsPath, "*.csv")
+                f = QtWidgets.QFileDialog.getOpenFileName(self, "Select the data csv file", self.resultsPath, "*.csv")[0]
             if os.path.isfile(f):
                 self.updateConfig('FORCING', pars, f)
         #-Otherwise update the checkbox or radiobutton values in the config file
@@ -1410,7 +1421,7 @@ class SphyPreProcessDialog(QtWidgets.QDialog, Ui_SphyPreProcessDialog):
             openproject = True
         # check if a project can be opened based on the criteria tested above
         if openproject:
-            tempname = QtWidgets.QFileDialog.getOpenFileName(self, "Open project *.cfg", self.projectDir,"*.cfg")
+            tempname = QtWidgets.QFileDialog.getOpenFileName(self, "Open project *.cfg", self.projectDir,"*.cfg")[0]
             if tempname:
                 # set the new config file
                 self.currentConfigFileName = tempname
@@ -1428,16 +1439,16 @@ class SphyPreProcessDialog(QtWidgets.QDialog, Ui_SphyPreProcessDialog):
     # Save as project
     def saveAsProject(self, ptype=False):
         if ptype:
-            tempname = QtWidgets.QFileDialog.getSaveFileName(self, 'Save '+ptype+' project as', self.projectDir, '*.cfg')
+            tempname = QtWidgets.QFileDialog.getSaveFileName(self, 'Save '+ptype+' project as', self.projectDir, '*.cfg')[0]
         else:
-            tempname = QtWidgets.QFileDialog.getSaveFileName(self, 'Save current project as', self.projectDir, '*.cfg')
+            tempname = QtWidgets.QFileDialog.getSaveFileName(self, 'Save current project as', self.projectDir, '*.cfg')[0]
         if tempname:
             self.currentConfigFileName = tempname
             self.saveProject()
             
     # Save the project
     def saveProject(self):
-        with open(self.currentConfigFileName[0], 'w') as f:
+        with open(self.currentConfigFileName, 'w') as f:
             self.currentConfig.write(f)
         
 #         if self.currentProject is False:

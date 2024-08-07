@@ -1,1 +1,0 @@
-"E:/amelia/SPHY_demo/new_area/forcing/prec0000.031" = if("E:/amelia/SPHY_demo/new_area/clone.map", 3600 * 24 * "E:/amelia/SPHY_demo/new_area/temp.map")
