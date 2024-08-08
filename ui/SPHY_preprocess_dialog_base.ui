@@ -11,7 +11,11 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>SPHY preprocessor</string>
+   <string>SPHY MODEL 3.0</string>
+  </property>
+  <property name="windowIcon">
+   <iconset resource="resources.qrc">
+    <normaloff>:/plugins/SphyPreProcess/images/icon.png</normaloff>:/plugins/SphyPreProcess/images/icon.png</iconset>
   </property>
   <widget class="QWidget" name="horizontalLayoutWidget">
    <property name="geometry">
@@ -621,7 +625,16 @@ button to identify the corresponding UTM zone for your model area.</string>
              <color alpha="255">
               <red>0</red>
               <green>0</green>
-              <blue>255</blue>
+              <blue>0</blue>
+             </color>
+            </brush>
+           </colorrole>
+           <colorrole role="Link">
+            <brush brushstyle="SolidPattern">
+             <color alpha="255">
+              <red>0</red>
+              <green>0</green>
+              <blue>0</blue>
              </color>
             </brush>
            </colorrole>
@@ -632,7 +645,16 @@ button to identify the corresponding UTM zone for your model area.</string>
              <color alpha="255">
               <red>0</red>
               <green>0</green>
-              <blue>255</blue>
+              <blue>0</blue>
+             </color>
+            </brush>
+           </colorrole>
+           <colorrole role="Link">
+            <brush brushstyle="SolidPattern">
+             <color alpha="255">
+              <red>0</red>
+              <green>0</green>
+              <blue>0</blue>
              </color>
             </brush>
            </colorrole>
@@ -647,13 +669,22 @@ button to identify the corresponding UTM zone for your model area.</string>
              </color>
             </brush>
            </colorrole>
+           <colorrole role="Link">
+            <brush brushstyle="SolidPattern">
+             <color alpha="255">
+              <red>0</red>
+              <green>0</green>
+              <blue>0</blue>
+             </color>
+            </brush>
+           </colorrole>
           </disabled>
          </palette>
         </property>
         <property name="font">
          <font>
-          <family>Comic Sans MS</family>
-          <pointsize>9</pointsize>
+          <family>MS Shell Dlg 2</family>
+          <pointsize>7</pointsize>
           <weight>50</weight>
           <italic>false</italic>
           <bold>false</bold>

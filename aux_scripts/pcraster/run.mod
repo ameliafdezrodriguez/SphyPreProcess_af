@@ -1,1 +1,1 @@
-"E:/amelia/SPHY_demo/SPHY-3.0-test/input/forcing/prec0000.184" = if("E:/amelia/SPHY_demo/SPHY-3.0-test/input/clone.map", 3600 * 24 * "E:/amelia/SPHY_demo/SPHY-3.0-test/input/temp.map")
+"E:/amelia/SPHY_demo/SPHY-3.0-test/input/slope.map" = slope("E:/amelia/SPHY_demo/SPHY-3.0-test/input/dem.map")

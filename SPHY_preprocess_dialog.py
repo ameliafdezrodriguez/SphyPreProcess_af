@@ -62,6 +62,7 @@ from SphyPreProcess_af.gui.generated.SPHY_preprocess_dialog_base import Ui_SphyP
 from SphyPreProcess_af.aux_scripts.spatial_processing import SpatialProcessing
 #-Import forcing processing 
 from SphyPreProcess_af.aux_scripts.forcing import processForcing
+from SphyPreProcess_af.aux_scripts.glaciers import Glaciers_model
 
 #-Class that allows to drag a rectangle on the map canvas
 class RectangleMapTool(QgsMapToolEmitPoint):
@@ -861,9 +862,25 @@ class SphyPreProcessDialog(QtWidgets.QDialog, Ui_SphyPreProcessDialog):
         # %% 7. CREATING GLACIER MAPS ------------------------------------------------------------
         print('CREATING GLACIER MAPS')
         if self.currentConfig.getint('MODULES', 'glacier') == 1:
-            print('Running glaciers model')
-            processing.run("model:glaciers_model", 
-                           {'clone_map': os.path.join(self.resultsPath, 'clone.map'),
+            # print('Running glaciers model')
+            # processing.run("model:glaciers_model", 
+            #                {'clone_map': os.path.join(self.resultsPath, 'clone.map'),
+            #                 'rgi_shapefile':os.path.join(self.databasePath, self.databaseConfig.get('GLACIER', 'rgi_file')),
+            #                 'debris_tiff': os.path.join(self.databasePath, self.databaseConfig.get('GLACIER', 'debris_file')),
+            #                 'dem':os.path.join(self.databasePath, self.databaseConfig.get('DEM', 'file')),
+            #                 'ferrinoti_tiff':os.path.join(self.databasePath, self.databaseConfig.get('GLACIER', 'ferrinoti_file')),
+            #                 'model_resolution':self.spatialRes,'model_crs':t_srs,
+            #                 'finer_resolution':self.spatialRes/10,'output_folder':self.resultsPath,
+            #                 'glaciers':'TEMPORARY_OUTPUT','rgi_clipped_reproject_glac_id':'TEMPORARY_OUTPUT',
+            #                 'intersection_glaciers_uid':'TEMPORARY_OUTPUT','ice_depth':'TEMPORARY_OUTPUT',
+            #                 'debris':'TEMPORARY_OUTPUT','frac_glac':'TEMPORARY_OUTPUT','mod_id':'TEMPORARY_OUTPUT',
+            #                 'modid_int_glacid':'TEMPORARY_OUTPUT','u_id':'TEMPORARY_OUTPUT','modid_int_glacid_inclmodh':'TEMPORARY_OUTPUT',
+            #                 'intersection_glaciers_uid_hglac':'TEMPORARY_OUTPUT','debris_geom':'TEMPORARY_OUTPUT'})
+            # print('Glaciers Module done')
+
+            # create an instance of the glaciers model class
+            model = Glaciers_model()
+            parameters = {'clone_map': os.path.join(self.resultsPath, 'clone.map'),
                             'rgi_shapefile':os.path.join(self.databasePath, self.databaseConfig.get('GLACIER', 'rgi_file')),
                             'debris_tiff': os.path.join(self.databasePath, self.databaseConfig.get('GLACIER', 'debris_file')),
                             'dem':os.path.join(self.databasePath, self.databaseConfig.get('DEM', 'file')),
@@ -874,9 +891,20 @@ class SphyPreProcessDialog(QtWidgets.QDialog, Ui_SphyPreProcessDialog):
                             'intersection_glaciers_uid':'TEMPORARY_OUTPUT','ice_depth':'TEMPORARY_OUTPUT',
                             'debris':'TEMPORARY_OUTPUT','frac_glac':'TEMPORARY_OUTPUT','mod_id':'TEMPORARY_OUTPUT',
                             'modid_int_glacid':'TEMPORARY_OUTPUT','u_id':'TEMPORARY_OUTPUT','modid_int_glacid_inclmodh':'TEMPORARY_OUTPUT',
-                            'intersection_glaciers_uid_hglac':'TEMPORARY_OUTPUT','debris_geom':'TEMPORARY_OUTPUT'})
-            print('Glaciers Module done')
-       
+                            'intersection_glaciers_uid_hglac':'TEMPORARY_OUTPUT','debris_geom':'TEMPORARY_OUTPUT'}
+            
+            # Prepare the context and feedback
+            context = QgsProcessingContext()
+            feedback = QgsProcessingFeedback()
+
+            # Run the model
+            try:
+                results = model.processAlgorithm(parameters, context, feedback)
+                print('Model run successfully!')
+                print('Results:', results)
+            except Exception as e:
+                print('Error:', str(e))
+                   
         self.initialMapsProgressBar.setValue(100)
         time.sleep(1)
         self.processLog1TextEdit.append('Processing is finished')
@@ -1208,7 +1236,7 @@ class SphyPreProcessDialog(QtWidgets.QDialog, Ui_SphyPreProcessDialog):
     #-Function that creates a pcraster model file (*.mod)
     def pcrasterModelFile(self, command):
         #-Create a batch file
-        batchfile = os.path.dirname(__file__) + '/pcraster/run.mod'
+        batchfile = os.path.dirname(__file__) + '/aux_scripts/pcraster/run.mod'
         f = open(batchfile, "w")
         f.write(command)
         f.close()
