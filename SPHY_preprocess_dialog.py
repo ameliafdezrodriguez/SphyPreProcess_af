@@ -55,6 +55,19 @@ from PyQt5.QtCore import Qt, pyqtSignal
 from qgis.core import *
 from qgis.utils import iface, plugins
 from qgis.gui import QgsMessageBar, QgsMapToolEmitPoint, QgsRubberBand 
+from qgis.core import QgsProcessing
+from qgis.core import QgsProcessingAlgorithm
+from qgis.core import QgsProcessingMultiStepFeedback
+from qgis.core import QgsProcessingParameterRasterLayer
+from qgis.core import QgsProcessingParameterVectorLayer
+from qgis.core import QgsProcessingParameterNumber
+from qgis.core import QgsProcessingParameterCrs
+from qgis.core import QgsProcessingParameterFile
+from qgis.core import QgsProcessingParameterFeatureSink
+from qgis.core import QgsCoordinateReferenceSystem
+from qgis.core import QgsExpression
+import processing
+
 
 from SphyPreProcess_af.gui.generated.SPHY_preprocess_dialog_base import Ui_SphyPreProcessDialog
 
@@ -862,25 +875,9 @@ class SphyPreProcessDialog(QtWidgets.QDialog, Ui_SphyPreProcessDialog):
         # %% 7. CREATING GLACIER MAPS ------------------------------------------------------------
         print('CREATING GLACIER MAPS')
         if self.currentConfig.getint('MODULES', 'glacier') == 1:
-            # print('Running glaciers model')
-            # processing.run("model:glaciers_model", 
-            #                {'clone_map': os.path.join(self.resultsPath, 'clone.map'),
-            #                 'rgi_shapefile':os.path.join(self.databasePath, self.databaseConfig.get('GLACIER', 'rgi_file')),
-            #                 'debris_tiff': os.path.join(self.databasePath, self.databaseConfig.get('GLACIER', 'debris_file')),
-            #                 'dem':os.path.join(self.databasePath, self.databaseConfig.get('DEM', 'file')),
-            #                 'ferrinoti_tiff':os.path.join(self.databasePath, self.databaseConfig.get('GLACIER', 'ferrinoti_file')),
-            #                 'model_resolution':self.spatialRes,'model_crs':t_srs,
-            #                 'finer_resolution':self.spatialRes/10,'output_folder':self.resultsPath,
-            #                 'glaciers':'TEMPORARY_OUTPUT','rgi_clipped_reproject_glac_id':'TEMPORARY_OUTPUT',
-            #                 'intersection_glaciers_uid':'TEMPORARY_OUTPUT','ice_depth':'TEMPORARY_OUTPUT',
-            #                 'debris':'TEMPORARY_OUTPUT','frac_glac':'TEMPORARY_OUTPUT','mod_id':'TEMPORARY_OUTPUT',
-            #                 'modid_int_glacid':'TEMPORARY_OUTPUT','u_id':'TEMPORARY_OUTPUT','modid_int_glacid_inclmodh':'TEMPORARY_OUTPUT',
-            #                 'intersection_glaciers_uid_hglac':'TEMPORARY_OUTPUT','debris_geom':'TEMPORARY_OUTPUT'})
-            # print('Glaciers Module done')
-
-            # create an instance of the glaciers model class
-            model = Glaciers_model()
-            parameters = {'clone_map': os.path.join(self.resultsPath, 'clone.map'),
+            print('Running glaciers model')
+            processing.run("model:glaciers_model", 
+                           {'clone_map': os.path.join(self.resultsPath, 'clone.map'),
                             'rgi_shapefile':os.path.join(self.databasePath, self.databaseConfig.get('GLACIER', 'rgi_file')),
                             'debris_tiff': os.path.join(self.databasePath, self.databaseConfig.get('GLACIER', 'debris_file')),
                             'dem':os.path.join(self.databasePath, self.databaseConfig.get('DEM', 'file')),
@@ -891,19 +888,36 @@ class SphyPreProcessDialog(QtWidgets.QDialog, Ui_SphyPreProcessDialog):
                             'intersection_glaciers_uid':'TEMPORARY_OUTPUT','ice_depth':'TEMPORARY_OUTPUT',
                             'debris':'TEMPORARY_OUTPUT','frac_glac':'TEMPORARY_OUTPUT','mod_id':'TEMPORARY_OUTPUT',
                             'modid_int_glacid':'TEMPORARY_OUTPUT','u_id':'TEMPORARY_OUTPUT','modid_int_glacid_inclmodh':'TEMPORARY_OUTPUT',
-                            'intersection_glaciers_uid_hglac':'TEMPORARY_OUTPUT','debris_geom':'TEMPORARY_OUTPUT'}
-            
-            # Prepare the context and feedback
-            context = QgsProcessingContext()
-            feedback = QgsProcessingFeedback()
+                            'intersection_glaciers_uid_hglac':'TEMPORARY_OUTPUT','debris_geom':'TEMPORARY_OUTPUT'})
+            print('Glaciers Module done')
 
-            # Run the model
-            try:
-                results = model.processAlgorithm(parameters, context, feedback)
-                print('Model run successfully!')
-                print('Results:', results)
-            except Exception as e:
-                print('Error:', str(e))
+            # It does not work for now
+            # create an instance of the glaciers model class
+            # model = Glaciers_model()
+            # parameters = {'clone_map': os.path.join(self.resultsPath, 'clone.map'),
+            #                 'rgi_shapefile':os.path.join(self.databasePath, self.databaseConfig.get('GLACIER', 'rgi_file')),
+            #                 'debris_tiff': os.path.join(self.databasePath, self.databaseConfig.get('GLACIER', 'debris_file')),
+            #                 'dem':os.path.join(self.databasePath, self.databaseConfig.get('DEM', 'file')),
+            #                 'ferrinoti_tiff':os.path.join(self.databasePath, self.databaseConfig.get('GLACIER', 'ferrinoti_file')),
+            #                 'model_resolution':self.spatialRes,'model_crs':t_srs,
+            #                 'finer_resolution':self.spatialRes/10,'output_folder':self.resultsPath,
+            #                 'glaciers':'TEMPORARY_OUTPUT','rgi_clipped_reproject_glac_id':'TEMPORARY_OUTPUT',
+            #                 'intersection_glaciers_uid':'TEMPORARY_OUTPUT','ice_depth':'TEMPORARY_OUTPUT',
+            #                 'debris':'TEMPORARY_OUTPUT','frac_glac':'TEMPORARY_OUTPUT','mod_id':'TEMPORARY_OUTPUT',
+            #                 'modid_int_glacid':'TEMPORARY_OUTPUT','u_id':'TEMPORARY_OUTPUT','modid_int_glacid_inclmodh':'TEMPORARY_OUTPUT',
+            #                 'intersection_glaciers_uid_hglac':'TEMPORARY_OUTPUT','debris_geom':'TEMPORARY_OUTPUT'}
+            
+            # # Prepare the context and feedback
+            # context = QgsProcessingContext()
+            # feedback = QgsProcessingFeedback()
+
+            # # Run the model
+            # try:
+            #     results = model.processAlgorithm(parameters, context, feedback)
+            #     print('Model run successfully!')
+            #     print('Results:', results)
+            # except Exception as e:
+            #     print('Error:', str(e))
                    
         self.initialMapsProgressBar.setValue(100)
         time.sleep(1)

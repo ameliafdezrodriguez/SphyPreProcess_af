@@ -54,7 +54,7 @@ class Glaciers_model(QgsProcessingAlgorithm):
         # Create U_ID grid
         alg_params = {
             'CRS': parameters['model_crs'],
-            'EXTENT': QgsExpression("layer_property(@clone_map,'extent') ").evaluate(),
+            'EXTENT': '-95331.0000,119169.0000,3213564.0000,3443814.0000', #QgsExpression("layer_property(@clone_map,'extent') ").evaluate(),
             'HOVERLAY': 0,
             'HSPACING': parameters['finer_resolution'],
             'TYPE': 2,  # Rectangle (Polygon)
